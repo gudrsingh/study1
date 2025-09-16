@@ -1,0 +1,171 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+  labels:
+    app: nc-device
+    version: 0.0.1
+  name: ncdevicehub
+  namespace: default
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: nc-device
+      version: 0.0.1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: nc-device
+        version: 0.0.1
+    spec:
+      shareProcessNamespace: true
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: ln7
+                operator: In
+                values:
+                - dep7
+      containers:
+      - command:
+        - /bin/bash
+        - -c
+        - sudo chown devicehub /devicehub-logs/logs/devicehub.log && sudo chown devicehub
+          /devicehub-logs/audit-logs/DeviceAudit.log && java -jar -Dspring.jpa.show-sql=false
+          -Dspring.profiles.active=int -Xloggc:/devicehub-logs/gc-%t.log -XX:+PrintGCDetails
+          -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10
+          -XX:GCLogFileSize=10M -XX:+PrintGCDateStamps -Dlogging.level.com.merck=DEBUG
+          -Dspring.datasource.ncapp.url=jdbc:mysql://127.0.0.1/nc_app -XX:+HeapDumpOnOutOfMemoryError
+          -XX:HeapDumpPath=/devicehub-logs/heapdump.bin -Xms3584m -Xmx3584m -XX:+StartAttachListener
+          -Dfilescan.app.secret.key=8c981c04a157b57492ecb9d49d75274e44aa0a5bf258ca0e6c640ea21d55f4d2
+          -Dfilescan.app.key=19cde9bee61da492c38056aa11f84fe9 -Dspring.datasource.ncapp.username=root
+          -Dspring.datasource.ncapp.password=w6Kke8gAiFbNO057 -Dspring.datasource.nciot.url=jdbc:mysql://127.0.0.1/nc_iot_store
+          -Dspring.datasource.nciot.username=root -Dspring.datasource.nciot.password=w6Kke8gAiFbNO057
+          -Dnextconnect.secret.key=$NC_SECRET -Dnextconnect.login.domain=nextconnect
+          -Dnextconnect.login.username=$LW_USER -Dnextconnect.login.password=$LW_PASSWORD
+          -Djava.awt.headless=true -Djava.io.tmpdir=/tmp -Dliquibase.enabled=false
+          -Dspring.datasource.ncapp.config.connection-timeout=30000 -Dspring.datasource.ncapp.config.minimum-idle=10
+          -Dspring.datasource.ncapp.config.maximum-pool-size=50 -Dspring.datasource.ncapp.config.idle-timeout=300000
+          -Dspring.datasource.ncapp.config.max-lifetime=1200000 -Dspring.datasource.nciot.config.connection-timeout=30000
+          -Dspring.datasource.nciot.config.minimum-idle=10 -Dspring.datasource.nciot.config.maximum-pool-size=50
+          -Dspring.datasource.nciot.config.idle-timeout=300000 -Dspring.datasource.nciot.config.max-lifetime=1200000
+          devicehub.jar
+        env:
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: cloudsql-db-credentials
+        - name: LW_USER
+          valueFrom:
+            secretKeyRef:
+              key: lw-username
+              name: lw-admin-user
+        - name: LW_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: lw-password
+              name: lw-admin-password
+        - name: NC_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: nextconnect-secret-key
+              name: int-nextconnect-secret-key
+        image: gcr.io/iron-burner-156615/image_to_be_replace
+        imagePullPolicy: Always
+        name: ncdevicehub
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "1"
+            memory: 4Gi
+          requests:
+            cpu: 400m
+            memory: 64Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /devicehub-logs
+          name: devicehub-logs-data
+        - mountPath: /device-images
+          name: devicehub-logs-data
+          subPath: device-images
+        - mountPath: /software-package
+          name: software-int-package-disk
+        - mountPath: /devicehub-logs/google-authentication
+          name: google-secret-log-rotation
+      - command:
+        - /cloud_sql_proxy
+        - --dir=/cloudsql
+        - -term_timeout=60s
+        - -max_connections=0
+        - -instances=iron-burner-156615:us-central1:int-nextconnect=tcp:3306
+        - -credential_file=/secrets/cloudsql/int-nextconnect-gke-sqlclient.json
+        image: gcr.io/cloudsql-docker/gce-proxy:1.13
+        imagePullPolicy: IfNotPresent
+        name: cloudsql-proxy
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File  
+        volumeMounts:
+        - mountPath: /secrets/cloudsql
+          name: cloudsql-instance-credentials
+          readOnly: true
+        - mountPath: /etc/ssl/certs
+          name: ssl-certs
+        - mountPath: /cloudsql
+          name: cloudsql
+      - name: yc-agent
+        image: gcr.io/iron-burner-156615/ycrash:devicehub-latest
+        ports:
+        - containerPort: 8085
+        volumeMounts:
+        - name: ycrash-agent-config
+          mountPath: "/opt/workspace/yc-agent/linux/config.yaml"
+          subPath: config.yaml    
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: devicehub-logs-data
+        persistentVolumeClaim:
+          claimName: devicehub-int-data-claim
+      - name: software-int-package-disk
+        persistentVolumeClaim:
+          claimName: software-int-package-disk-claim
+      - name: cloudsql-instance-credentials
+        secret:
+          defaultMode: 420
+          secretName: cloudsql-instance-credentials
+      - name: google-secret-log-rotation
+        secret:
+          defaultMode: 420
+          secretName: google-secret-log-rotation-milliq
+      - hostPath:
+          path: /etc/ssl/certs
+          type: ""
+        name: ssl-certs
+      - emptyDir: {}
+        name: cloudsql
+      - name: ycrash-agent-config
+        secret:
+          secretName: ycrash-devicehub-config
+          items:
+          - key: config.yaml
+            path: config.yaml

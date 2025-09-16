@@ -1,0 +1,34 @@
+pipeline{
+    agent any 
+    stages('build'){
+        steps{
+            sh mvn clean package install
+        }
+    }
+}
+timeout- timeout(time:3,unit:'min')
+when- to optionally execute a step
+    stages{
+        stage'build'{
+            when: exression {foo=bar}
+            steps{ build}
+        }
+    }
+
+multiple condition
+when{
+    allof{
+        not {branch 'master'}
+        env.name:jobnm
+    }
+}
+
+parallel stages:
+stages{
+    stage (browser test) {
+        parallel {stage('chrome') {steps {tst}}
+                  stage ('firefox') {steps {tst2}}  }
+    }
+}
+
+environment variable: environment {DB.engine = 'sqlite'}

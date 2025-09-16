@@ -1,0 +1,102 @@
+import gradio as gr
+import requests
+import json
+import base64
+import io
+
+api_key = "your-api-key"
+bedrock_model_id = "anthropic.claude-3-sonnet-20240229-v1:0"
+api_url = f"https://api.nlp.dev.uptimize.merckgroup.com/model/{bedrock_model_id}/invoke"
+
+headers = {
+    "x-api-key": api_key,
+    "Content-Type": "application/json"
+}
+
+# Utility function to encode image to base64
+def encode_image_to_base64(image):
+    buffer = io.BytesIO()
+    # Determine the image format and set the appropriate format for saving
+    format = image.format if image.format in ["PNG", "JPEG"] else "PNG"
+    image.save(buffer, format=format)
+    encoded_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    return encoded_image, format.lower()
+
+# API processing function
+def process_image_and_text(image, text):
+    content = []
+
+    # Add image content
+    if image:
+        encoded_image, image_format = encode_image_to_base64(image)
+        content.append({
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": f"image/{image_format}",
+                "data": encoded_image,
+            }
+        })
+
+    # Add text content
+    if text:
+        content.append({"type": "text", "text": text})
+
+    # Prepare payload
+    payload = {
+        "anthropic_version": "bedrock-2023-05-31",
+        "max_tokens": 1000,
+        "messages": [
+            {
+                "role": "user",
+                "content": content
+            }
+        ]
+    }
+
+    # Send request
+    response = requests.request(
+        method = "POST",
+        url=api_url,
+        headers=headers,
+        data=json.dumps(payload),
+        verify=False 
+    )
+    
+    response_data = json.loads(response.text)
+
+    # Extract the text content
+    text_content = response_data['content'][0]['text']
+
+    return text_content
+
+# Gradio interface
+def create_interface():
+    text_input = gr.Textbox(
+        label="Enter your question",
+        placeholder="Ask your question about the image or general queries",
+        lines=2,
+    )
+
+    image_input = gr.Image(
+        label="Upload an Image (Optional)",
+        type="pil"
+    )
+
+    output = gr.Textbox(
+        label="Response",
+    lines=5,         # Initial number of lines visible
+    max_lines=20    )
+
+    interface = gr.Interface(
+        fn=process_image_and_text,
+        inputs=[image_input, text_input],
+        outputs=output,
+        title="Image and Text-based Question Answering",
+        description="Submit an image and a related question, or just a question, and receive Claude answer.",
+    )
+
+    interface.launch(debug=True)
+
+if __name__ == "__main__":
+    create_interface()

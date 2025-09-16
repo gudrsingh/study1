@@ -1,0 +1,19 @@
+OOPs refers to languages that use objects in programming, they use objects as a primary source to implement what is to happen in the code. Objects are seen by the viewer or user, performing tasks assigned by you. Object-oriented programming aims to implement real-world entities like inheritance, hiding, polymorphism etc. in programming. The main aim of OOP is to bind together the data and the functions that operate on them so that no other part of the code can access this data except that function. 
+
+-> Access Modifier: 
+Defines the access type of the method i.e. from where it can be accessed in your application. In Java, there are 4 types of access specifiers: 
+public: Accessible in all classes in your application.
+-protected: Accessible within the package in which it is defined and in its subclass(es)         (including subclasses declared outside the package).
+-private: Accessible only within the class in which it is defined.
+-default (declared/defined without using any modifier): Accessible within the same class and    package within which its class is defined.
+
+The return type: The data type of the value returned by the method or void if it does not return a value.
+Method Name: The rules for field names apply to method names as well, but the convention is a little different.
+Parameter list: Comma-separated list of the input parameters that are defined, preceded by their data type, within the enclosed parentheses. If there are no parameters, you must use empty parentheses ().
+Exception list: The exceptions you expect the method to throw. You can specify these exception(s).
+Method body: It is the block of code, enclosed between braces, that you need to execute to perform your intended operations.
+
+Message Passing: Objects communicate with one another by sending and receiving information to each other. A message for an object is a request for execution of a procedure and therefore will invoke a function in the receiving object that generates the desired results. Message passing involves specifying the name of the object, the name of the function and the information to be sent.
+
+
+

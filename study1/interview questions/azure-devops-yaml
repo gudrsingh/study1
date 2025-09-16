@@ -1,0 +1,120 @@
+name: $(BuildID)
+# Variable 'registryName' was defined in the Variables tab
+# Variable 'serviceName' was defined in the Variables tab
+variables:
+  - name: registryName
+    value: mtrust
+  - name: serviceName
+    value: rockit-container-service
+trigger:
+  branches:
+    include:
+    - refs/heads/main
+  paths:
+    include:
+    - helm
+    - helm/*
+    exclude:
+    - src
+    - src/*
+jobs:
+- job: Job_1
+  displayName: Agent job 1
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  - checkout: self
+  - task: AzureKeyVault@2
+    displayName: 'Azure Key Vault: mtrust'
+    inputs:
+      azureSubscription: 'M-Trust'
+      KeyVaultName: mtrust-solution
+      SecretsFilter: ACRUSER,ACRSECRET
+  - task: Bash@3
+    displayName: Bash Script
+    inputs:
+      targetType: inline
+      script: "export HELM_EXPERIMENTAL_OCI=1\ncd helm/$(serviceName)\necho $(ACRSECRET) | helm registry login $(registryName).azurecr.io \\\n  -u $(ACRUSER) \\\n  --password-stdin \nhelm package . --version 1.0.$(Build.BuildId)\nhelm push $(serviceName)-1.0.$(Build.BuildId).tgz oci://$(registryName).azurecr.io/helm/"
+...
+============================azure vault ============
+# Display name when the pipeline is running
+name: 'Dependabot -- $(Date:yyyyMMdd)$(Rev:.r)'
+# Disable CI trigger
+trigger: none
+# Schedules instead of triggers runs the job on interval not on trigger
+schedules:
+  # every sunday 3am UTC
+  - cron: '0 3 * * 0'
+    displayName: Weekly
+    # run even when there are no code changes
+    always: true
+    # run only on these branches
+    branches:
+      include:
+        - main
+pool:
+  vmImage: 'ubuntu-latest'
+steps:
+  - task: AzureKeyVault@2
+    displayName: 'Azure Key Vault: rockit'
+    inputs:
+      azureSubscription: 'M-Trust'
+      KeyVaultName: rockit
+      SecretsFilter: NPMPAT,DEPENDABOTPAT
+  - task: dependabot@2
+    inputs:
+      failOnException: false
+      autoApprove: true
+      setAutoComplete: true
+      azureDevOpsAccessToken: $(DEPENDABOTPAT)
+      extraEnvironmentVariables: NPM_TOKEN=$(NPMPAT)
+      useUpdateScriptvNext: true
+
+======= docker build & push image ====================
+name: $(BuildID)
+trigger:
+  branches:
+    include:
+      - refs/heads/main
+  paths:
+    exclude:
+    - helm
+    - helm/*
+    include:
+    - src
+    - src/*
+    - /*
+jobs:
+  - job: Job_1
+    displayName: Docker
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+      - checkout: self
+      - task: AzureKeyVault@2
+        displayName: 'Azure Key Vault: rockit'
+        inputs:
+          azureSubscription: 'M-Trust'
+          KeyVaultName: rockit
+          SecretsFilter: NPMPATTOKEN
+      - bash: |
+          ArtifactsNpmPat=$(printf $(NPMPATTOKEN) | base64 -w 0)
+          echo "##vso[task.setVariable variable=NPMPAT;]$ArtifactsNpmPat"
+        displayName: setPAT
+      - task: Docker@2
+        displayName: build
+        inputs:
+          containerRegistry: mtrust
+          repository: rockit-container-service
+          command: build
+          tags: >-
+            $(Build.BuildId)
+          arguments: --build-arg BASE_64_NPM_TOKEN=$(NPMPAT)
+      - task: Docker@2
+        displayName: push
+        inputs:
+          containerRegistry: mtrust
+          repository: rockit-container-service
+          command: push
+          tags: >-
+            $(Build.BuildId)

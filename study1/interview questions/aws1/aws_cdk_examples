@@ -1,0 +1,120 @@
+1.Basic CDK App & Stack       2. S3 Bucket       3. IAM Role & Policy       4. Lambda Function
+5. API Gateway + Lambda Integration    6. DynamoDB Table    7. SNS Topic    8. SQS Queue
+9. VPC + Subnets    10. EC2 Instance   11. ECS Cluster + Fargate Service    12. RDS Database
+13. CloudWatch Alarm
+===============================================================================================
+
+1. Basic CDK App & Stack
+from aws_cdk import core as cdk
+class MyStack(cdk.Stack):
+    def __init__(self, scope: cdk.Construct, id: str, **kwargs):
+        super().__init__(scope, id, **kwargs)
+app = cdk.App()
+MyStack(app, "MyStack")
+app.synth()
+
+2. S3 Bucket
+from aws_cdk import aws_s3 as s3
+
+bucket = s3.Bucket(self, "MyBucket",
+    versioned=True,
+    encryption=s3.BucketEncryption.S3_MANAGED,
+    removal_policy=cdk.RemovalPolicy.DESTROY
+)
+
+3. IAM Role & Policy
+from aws_cdk import aws_iam as iam
+
+role = iam.Role(self, "MyRole",
+    assumed_by=iam.ServicePrincipal("ec2.amazonaws.com")
+)
+
+role.add_managed_policy(
+    iam.ManagedPolicy.from_aws_managed_policy_name("AmazonS3FullAccess")
+)
+
+4. Lambda Function
+from aws_cdk import aws_lambda as _lambda
+
+fn = _lambda.Function(self, "MyLambda",
+    runtime=_lambda.Runtime.PYTHON_3_9,
+    handler="index.handler",
+    code=_lambda.Code.from_asset("lambda")
+)
+
+5. API Gateway + Lambda Integration
+from aws_cdk import aws_apigateway as apigw
+
+api = apigw.LambdaRestApi(self, "MyAPI",
+    handler=fn,
+    proxy=True
+)
+
+6. DynamoDB Table
+from aws_cdk import aws_dynamodb as dynamodb
+
+table = dynamodb.Table(self, "MyTable",
+    partition_key={"name": "id", "type": dynamodb.AttributeType.STRING},
+    billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST
+)
+
+7. SNS Topic
+from aws_cdk import aws_sns as sns
+
+topic = sns.Topic(self, "MyTopic")
+
+8. SQS Queue
+from aws_cdk import aws_sqs as sqs
+
+queue = sqs.Queue(self, "MyQueue",
+    visibility_timeout=cdk.Duration.seconds(30)
+)
+
+9. VPC + Subnets
+from aws_cdk import aws_ec2 as ec2
+
+vpc = ec2.Vpc(self, "MyVPC",
+    max_azs=2,
+    nat_gateways=1
+)
+
+10. EC2 Instance
+instance = ec2.Instance(self, "MyInstance",
+    vpc=vpc,
+    instance_type=ec2.InstanceType("t3.micro"),
+    machine_image=ec2.AmazonLinuxImage(),
+    key_name="my-keypair"
+)
+
+11. ECS Cluster + Fargate Service
+from aws_cdk import aws_ecs as ecs
+
+cluster = ecs.Cluster(self, "MyCluster", vpc=vpc)
+
+fargate_service = ecs.FargateService(self, "MyFargateService",
+    cluster=cluster,
+    task_definition=ecs.FargateTaskDefinition(self, "TaskDef",
+        cpu=256, memory_limit_mib=512
+    )
+)
+
+12. RDS Database
+from aws_cdk import aws_rds as rds
+
+db = rds.DatabaseInstance(self, "MyDB",
+    engine=rds.DatabaseInstanceEngine.MYSQL,
+    vpc=vpc,
+    instance_type=ec2.InstanceType("t3.micro"),
+    credentials=rds.Credentials.from_generated_secret("admin")
+)
+
+13. CloudWatch Alarm
+from aws_cdk import aws_cloudwatch as cloudwatch
+
+alarm = cloudwatch.Alarm(self, "MyAlarm",
+    metric=bucket.metric("NumberOfObjects"),
+    threshold=1000,
+    evaluation_periods=1
+)
+
+

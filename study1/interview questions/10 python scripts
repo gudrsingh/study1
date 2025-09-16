@@ -1,0 +1,165 @@
+1. Data Analysis with Pandas
+Pandas is a powerful library for data analysis and manipulation. With just a few lines of code, you can read, clean, and analyze data from various sources like CSV files or databases. Here’s a sample script:
+
+import pandas as pd
+
+# Read data from a CSV file
+data = pd.read_csv('data.csv')
+
+# Perform basic analysis
+mean = data['column_name'].mean()
+print(f"Mean: {mean}")
+2. Web Scraping with BeautifulSoup
+BeautifulSoup is a Python library for web scraping. It allows you to extract data from websites with ease. Here’s a simple web scraping script:
+
+import requests
+from bs4 import BeautifulSoup
+
+url = 'https://example.com'
+response = requests.get(url)
+soup = BeautifulSoup(response.text, 'html.parser')
+
+# Extract data from the webpage
+data = soup.find('div', class_='content')
+print(data.text)
+3. File Renamer
+This script is handy when you need to rename multiple files in a folder based on specific criteria. For example, you can add a prefix, suffix, or replace text in filenames.
+
+import os
+
+folder_path = '/path/to/folder'
+for filename in os.listdir(folder_path):
+    if filename.startswith('prefix_'):
+        new_filename = filename.replace('prefix_', 'new_prefix_')
+        os.rename(os.path.join(folder_path, filename), os.path.join(folder_path, new_filename))
+4. Image Resizer with Pillow
+Pillow is a Python Imaging Library that simplifies working with images. This script resizes a batch of images to a specified resolution or aspect ratio:
+
+from PIL import Image
+import os
+
+input_folder = '/path/to/images'
+output_folder = '/path/to/resized_images'
+desired_size = (100, 100)
+
+for filename in os.listdir(input_folder):
+    with Image.open(os.path.join(input_folder, filename)) as img:
+        img.thumbnail(desired_size)
+        img.save(os.path.join(output_folder, filename))
+5. PDF Generator with ReportLab
+ReportLab is a library for creating PDF documents in Python. You can generate PDF files from text or HTML content. Here’s a basic example:
+
+from reportlab.pdfgen import canvas
+
+pdf_file = 'output.pdf'
+text = 'Hello, this is a sample PDF.'
+
+c = canvas.Canvas(pdf_file)
+c.drawString(100, 750, text)
+c.save()
+6. Automated Email Sender with smtplib
+Need to send automated emails? Python’s smtplib library can help. This script sends emails programmatically:
+
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+smtp_server = 'smtp.example.com'
+sender_email = 'your_email@example.com'
+receiver_email = 'recipient@example.com'
+password = 'your_password'
+
+message = MIMEMultipart()
+message['From'] = sender_email
+message['To'] = receiver_email
+message['Subject'] = 'Sample Email Subject'
+
+body = 'This is a sample email message.'
+message.attach(MIMEText(body, 'plain'))
+
+with smtplib.SMTP(smtp_server, 587) as server:
+    server.starttls()
+    server.login(sender_email, password)
+    server.sendmail(sender_email, receiver_email, message.as_string())
+7. Data Backup Script
+Automate the backup of files and directories to ensure data safety:
+
+import shutil
+
+source_folder = '/path/to/source_folder'
+backup_folder = '/path/to/backup_folder'
+
+shutil.copytree(source_folder, backup_folder)
+8. Password Generator
+Generate strong and random passwords for improved security:
+
+import random
+import string
+
+def generate_password(length=12):
+    characters = string.ascii_letters + string.digits + string.punctuation
+    return ''.join(random.choice(characters) for _ in range(length))
+
+password = generate_password()
+print(password)
+9. Simple Web Server
+Create a basic HTTP server for testing and development:
+
+import http.server
+import socketserver
+
+port = 8000
+
+with socketserver.TCPServer(('', port), http.server.SimpleHTTPRequestHandler) as httpd:
+    print(f"Serving at port {port}")
+    httpd.serve_forever()
+10. Database Backup and Restore using SQLite
+SQLite is a C library that provides a lightweight disk-based database that doesn’t require a separate server process and allows accessing the database using a nonstandard variant of the SQL query language. Some applications can use SQLite for internal data storage. It’s also possible to prototype an application using SQLite and then port the code to a larger database such as PostgreSQL or Oracle.
+
+Below, I’ll provide you with a sample code for backing up and restoring a SQLite database in Python, which is a lightweight and commonly used database system:
+
+import sqlite3
+import shutil
+
+# Database file paths
+source_db_file = 'source.db'
+backup_db_file = 'backup.db'
+
+# Function to create a backup of the SQLite database
+def backup_database():
+    try:
+        shutil.copy2(source_db_file, backup_db_file)
+        print("Backup successful.")
+    except Exception as e:
+        print(f"Backup failed: {str(e)}")
+
+# Function to restore the SQLite database from a backup
+def restore_database():
+    try:
+        shutil.copy2(backup_db_file, source_db_file)
+        print("Restore successful.")
+    except Exception as e:
+        print(f"Restore failed: {str(e)}")
+
+# Usage
+while True:
+    print("Options:")
+    print("1. Backup Database")
+    print("2. Restore Database")
+    print("3. Quit")
+    choice = input("Enter your choice (1/2/3): ")
+
+    if choice == '1':
+        backup_database()
+    elif choice == '2':
+        restore_database()
+    elif choice == '3':
+        break
+    else:
+        print("Invalid choice. Please enter 1, 2, or 3.")
+In this code:
+
+backup_database() function makes a copy of the source SQLite database file and names it as the backup file. You can run this function to create backup of your database.
+restore_database() function copies the backup file back to the source file, effectively restoring the database to the state it was when the backup was created.
+The user is presented with options to either backup the database, restore it, or quit the program.
+You can adjust the source_db_file and backup_db_file variables to specify the paths to your SQLit

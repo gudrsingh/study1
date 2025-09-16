@@ -1,0 +1,48 @@
+trigger:
+  branches:
+    include:
+       - TEST
+  paths:
+    include:
+      - AWS/CFT/*.yaml
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - name: StackName1
+    value: emds-create-s3-buckets-1a
+  - name: StackName2
+    value: emds-iam-policies-2a
+
+steps:
+
+  - task: CloudFormationCreateOrUpdateStack@1
+    displayName: Create S3 Buckets
+    inputs:
+      awsCredentials: $(DWHServiceConnection)
+      regionName: 'us-east-1'
+      stackName: $(StackName1)
+      templateSource: 'file'
+      templateFile: 'AWS/CFT/1a-emds-s3-buckets.yaml'
+      templateParametersSource: 'inline'
+      templateParameters: |
+        - ParameterKey: EnvironmentName
+          ParameterValue: $(EnvironmentName)
+      capabilityNamedIAM: false
+      capabilityAutoExpand: false
+
+  - task: CloudFormationCreateOrUpdateStack@1
+    displayName: Create IAM Policies
+    inputs:
+      awsCredentials: $(DWHServiceConnection)
+      regionName: 'us-east-1'
+      stackName: $(StackName2)
+      templateSource: 'file'
+      templateFile: 'AWS/CFT/2a-emds-iam-policies.yaml'
+      templateParametersSource: 'inline'
+      templateParameters: |
+        - ParameterKey: EnvironmentName
+          ParameterValue: $(EnvironmentName)
+      capabilityNamedIAM: true
+      capabilityAutoExpand: true
+

@@ -1,0 +1,75 @@
+Good Logging Strategies
+->Centralized logging
+Collect logs from apps, infrastructure, network devices, and cloud services into a central system (ELK, Loki, CloudWatch, Datadog, Splunk).
+This avoids chasing logs across nodes when debugging.
+->Structured logging - Use JSON or another parseable format (not just free-text).
+Include standard fields: timestamp, request_id, user_id, trace_id, severity, service, env.
+
+Severity levels with discipline
+DEBUG → Dev troubleshooting
+INFO → State changes (startup/shutdown, config applied)
+WARN → Unexpected but non-fatal issues
+ERROR → Failures needing attention
+FATAL → System crash / unrecoverable
+
+Correlation IDs / trace IDs
+Propagate IDs across services (e.g., via headers like X-Request-ID).
+Makes it possible to follow a single transaction end-to-end across microservices.
+
+Context over noise
+Log actionable events with enough metadata (user, env, operation).
+Avoid dumping stack traces for expected errors (e.g., 404s on health checks).
+Too much noise = real issues buried.
+
+Log rotation and retention policies
+Rotate logs to avoid disk pressure.
+
+Keep short retention for DEBUG, longer for ERROR/FATAL.
+Use lifecycle rules in storage (e.g., S3 IA / Glacier).
+
+Security & compliance
+Don’t log secrets, passwords, tokens, PII.
+Mask sensitive fields.
+Encrypt logs at rest and in transit.
+
+Keep audit logs tamper-evident.
+
+🔎 Avoiding Observability Blind Spots
+Full “three pillars” coverage
+Logs (what happened),
+Metrics (system health),
+Traces (where latency/failure occurred).
+Relying only on logs = partial picture.
+
+Environment parity
+Don’t just log in production. Enable logging in staging/QA with similar verbosity.
+Prevents “works in staging, breaks in prod” without clues.
+
+Distributed tracing
+Without tracing, slow calls across microservices look like random spikes.
+Use OpenTelemetry, Jaeger, X-Ray, or Tempo to tie logs/metrics together.
+
+Health & audit logs
+Many teams forget infra-level logs: load balancers, DNS, IAM, cloud control plane (CloudTrail).
+
+Blind spots often come from ignoring non-app logs.
+
+Error budgets for observability
+Define SLOs for logging itself (e.g., 99.9% log delivery success).
+Monitor log pipeline health — a broken Fluentd/Vector agent = instant blind spot.
+
+Cross-account / multi-region visibility
+Centralize logs across regions/accounts. Blind spots often occur at boundaries.
+
+Run “game days”
+Simulate failures (disk full, API timeout, DB down).
+See if you can detect and trace the issue from your logs/metrics.
+Gaps found in drills are the blind spots you’d otherwise discover at 3 a.m.
+
+⚡️ In short:
+
+Log what matters (events, errors, changes).
+
+Log it in a structured, centralized, and correlated way.
+
+Continuously test your observability to surface blind spots before incidents do.

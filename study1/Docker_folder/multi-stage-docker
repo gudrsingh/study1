@@ -1,0 +1,83 @@
+What is a Multi-Stage Docker Build?
+Normally, when you build an image you:
+Compile/build dependencies (e.g., install compilers, libraries).
+Run the application.
+
+If you do this in a single Dockerfile, your final image may include unnecessary tools (like compilers, package managers), making it large, insecure, and slower to pull/deploy.
+👉 Multi-stage builds solve this:
+You use multiple FROM statements in a single Dockerfile.
+The first stage (builder) has all tools needed for compiling/building.
+The final stage only copies the built artifacts (binary, jar, etc.) into a minimal base image.
+
+✅ Benefits:
+Smaller image size.
+More secure (no compilers/tools in prod image).
+Faster deployments.
+Cleaner separation between build and runtime environments.
+
+🔹 Example: Multi-stage Dockerfile (Go app)
+# -------- STAGE 1: Build --------
+FROM golang:1.21 AS builder
+
+# Set working dir
+WORKDIR /app
+
+# Copy go files and download dependencies
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy the source code
+COPY . .
+
+# Build the Go app
+RUN go build -o myapp
+
+# -------- STAGE 2: Run --------
+FROM alpine:3.20
+
+# Create a non-root user
+RUN adduser -D appuser
+
+WORKDIR /app
+
+# Copy the binary from builder stage
+COPY --from=builder /app/myapp .
+
+# Use non-root user
+USER appuser
+
+# Run the app
+CMD ["./myapp"]
+
+🔹 Explanation
+
+Stage 1 (builder):
+
+Based on golang official image.
+
+Installs dependencies & builds the binary.
+
+Stage 2 (runtime):
+
+Based on lightweight alpine image.
+
+Copies only the final binary (myapp).
+
+Final image is very small (~10MB instead of ~800MB).
+
+🔹 Example: Multi-stage for Java (Maven + JDK → JRE only)
+# Stage 1: Build with Maven
+FROM maven:3.9.5-eclipse-temurin-17 AS builder
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn package -DskipTests
+
+# Stage 2: Run with JRE only
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY --from=builder /app/target/myapp.jar app.jar
+CMD ["java", "-jar", "app.jar"]
+
+
+👉 In short: Multi-stage builds = build heavy stuff in one stage, copy only what you need into a clean final image.

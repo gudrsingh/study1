@@ -1,0 +1,35 @@
+#1) create_snapshots
+import boto3
+ec2 = boto3.resource("ec2")
+for vol in ec2.volumes.all():
+    vol_id = vol.id
+    volume = ec2.Volume(vol.id)
+    desc = 'This is a snapshot of {}'.format(vol_id)
+    print("Creating Snapshot of the following Volume : ", vol_id)
+    volume.create_snapshot(Description=desc)
+
+#2)  cleanup snapshots
+import boto3
+from datetime import datetime, timedelta, timezone
+ec2 = boto3.resource('ec2')
+current_date = datetime.now(tz=timezone.utc)
+diff_date = current_date - timedelta(days=10)
+snapshots = ec2.snapshots.filter(OwnerIds=['self'])
+for snapshot in snapshots:
+    snapshot_start_time = snapshot.start_time
+    if diff_date > snapshot_start_time:
+        try:
+            snapshot.delete()
+            print("Deleting Snapshot id: ", snapshot.snapshot_id)
+        except Exception as e:
+            print("Current Snapshot is in use: ", snapshot.snapshot_id)
+            continue
+#3) clean old ebs
+import boto3
+ec2 = boto3.resource("ec2")
+vol_status={"Name":"status","Values":["available"]}
+for vol in ec2.volumes.filter(Filters=[vol_status]):
+    vol_id = vol.id
+    volume = ec2.Volume(vol.id)
+    print("Cleanup EBS volume: ", vol_id)
+    volume.delete()

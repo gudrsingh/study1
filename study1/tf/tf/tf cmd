@@ -1,0 +1,15 @@
+install - tfenv install 1.3.0
+terraform version
+terraorm init - installs modules, backend, providers plugins
+change backend cnfig during init - tf init -backend-config=cfg/s3-dev.tf -reconfigure
+tf plan -out plan.out -> check config to execute and write plan in file 
+tf apply plan.out
+tf apply auto-approv -var -> apply and define new var value 
+tf apply -target=module.s3 -> apply only one module
+tf destroy, tf plan -destroy -> create plan for destroy
+tf destory -target aws.s3.bucket ->  destroy pecific resource
+tf console - debug
+tf validate - syntax check
+tf state mv aws-iam0role1 module.mymodule -> if moved existing resource in module, need to update state
+tf import aws-iam-policy -> import existing policy
+

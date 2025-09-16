@@ -1,0 +1,85 @@
+#!/bin/bash
+
+ENV=${Env:-dev}
+ZONE=us-central1-c
+PROJECT=iron-burner-156615
+POD=ncdevicelogging
+NAMESPACE=""
+FOLDERNAME="dev"
+
+if [ "$ENV" = "QA" ]
+then
+    CLUSTER=nc-qa1-uc1c
+	FOLDERNAME="qa"
+elif [ "$ENV" = "Int" ]
+then
+    CLUSTER=nc-int1-uc1c
+	FOLDERNAME="int"
+elif [ "$ENV" = "HA-DEV" ]
+then
+    CLUSTER=nc-hadev1-uc1
+	FOLDERNAME="ha-dev"
+elif [ "$ENV" = "Stg" ]
+then
+    CLUSTER=nc-stg1-uc1
+	FOLDERNAME="stg"
+elif [ "$ENV" = "Pre-Stg" ]
+then
+    CLUSTER=nc-int1-uc1c
+	NAMESPACE=" --namespace=pre-stg"
+	FOLDERNAME="prestg"
+elif [ "$ENV" = "LW-QA" ]
+then
+    CLUSTER=lw-qa1-uc1c
+	FOLDERNAME="lwnc-qa"
+elif [ "$ENV" = "Prod" ]
+then
+    CLUSTER=nc-prod1-uc1
+	FOLDERNAME="prod"
+else
+    CLUSTER=nc-dev1-uc1c
+fi
+
+FULLGKEPATH=gke_${PROJECT}_${ZONE}_${CLUSTER}
+
+#Authenticating Froom Jenkins Build Server to Iron-Burner Project Using Gcloud Credentials
+#gcloud auth activate-service-account cmiotadm-rw-dfwprddoc-nextconn@iron-burner-156615.iam.gserviceaccount.com --key-file /var/jenkins_home/workspace/nextconnect-analyticshub_deploy/kube-scripts/dev/cmiotadm-rw-dfwprddoc-nextconnect.json
+export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+gcloud auth activate-service-account cmiotadm-rw-dfwprddoc-nextconn@iron-burner-156615.iam.gserviceaccount.com --key-file /var/jenkins_home/workspace/testserviceaccount/key/lw_key.json
+gcloud config set project ${PROJECT}
+gcloud container clusters get-credentials ${CLUSTER} --zone ${ZONE} --project ${PROJECT}
+kubectl config current-context
+
+YAMLPATH=$WORKSPACE/kube-scripts/${FOLDERNAME}/nc_devicelogging.yaml
+
+# Remove a trailing newline
+ImagesList="${ImagesList%
+}"
+
+sed -ie "s/gcr.io\/iron-burner-156615\/image_to_be_replace/gcr.io\/iron-burner-156615\/nextconnect-devicelogging1:$ImagesList/g" ${YAMLPATH}
+echo "Now we are in ${ENV} environment"
+# Deploy new image in our existing dev cluster in gcloud
+# or Create new pod if pod does't exist in the cluster
+
+pod_output=`kubectl get deploy ${POD} ${NAMESPACE} |grep -i "${POD}"  | cut -d' ' -f1`
+value=${POD}
+   if [ "$pod_output" == "$value" ];then
+     echo "The pod ${POD} is already exist in ${ENV}-cluster. So applying the new configurations to the existing pod"
+   kubectl config use-context ${FULLGKEPATH} && kubectl apply -f ${YAMLPATH}
+   sleep 3m
+   #kubectl describe deploy ncdevicelogging
+   kubectl get pods ${NAMESPACE}
+   a=`kubectl get pods ${NAMESPACE}| grep ${POD} | awk '{print$1}'`
+   kubectl logs $a -c ${POD} ${NAMESPACE}
+   else
+       echo " The ${POD} pod is not exist in our ${ENV}-cluster. So creating a new pod"
+   kubectl config use-context ${FULLGKEPATH} && kubectl create -f ${YAMLPATH}
+   sleep 3m
+   #kubectl describe deploy ncdevicelogging
+   kubectl get pods ${NAMESPACE}
+   a=`kubectl get pods ${NAMESPACE}| grep ${POD} | awk '{print$1}'`
+   kubectl logs $a -c ${POD} ${NAMESPACE}
+   fi
+
+
+  

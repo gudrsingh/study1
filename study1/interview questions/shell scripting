@@ -1,0 +1,25 @@
+Deletes logs older than 7 days.
+find /var/log -name "*.log" -type f -mtime +7 -exec rm -f {} \;
+find /var/log -type f -name "*.tmp" -mtime +15 -size +100M -delete
+
+Alerts if disk usage goes above 80%.
+df -h | awk '$5+0 > 80 {print $0}'
+
+Check if Service is Running
+SERVICE="nginx"
+if pgrep -x "$SERVICE" > /dev/null then  echo "$SERVICE is running" else   echo "$SERVICE is NOT running" fi
+
+Simple User Creation
+read -p "Enter username: " USER||useradd "$USER" && passwd "$USER"
+
+MySQL/MariaDB Database Backup
+mysqldump -u root -p dbname > /backup/dbname_$(date +%F).sql
+
+System Health Check
+#!/bin/bash // echo "CPU: $(uptime)" //echo "Memory:" //free -h // echo "Disk:"  //df -h
+
+Bulk File Rename
+for f in *.txt; do
+    mv "$f" "${f%.txt}.bak"
+done
+

@@ -1,0 +1,39 @@
+HA, Low Latency, Fault tolerance, auto scaling, load balancing, 
+GCE (compute engine): provision & manage VM- create & manage lifecycle of VM
+CE(compute engine) + PD (persistent disk) + CLB (cloud load balancer)
+
+create & manage lifecycle of VM
+Load balancing & autoscaling for VM
+attach storage 
+manage network connectivity & config (IP attach,subnets)
+
+simplify VM http server setup - startup script- boot strapping - instance template - custom image
+
+VM creation - 
+machine family (determines cpu, RAM ,H/W)
+            - general purpose (e2-std-2,4,8,16 cpu)
+            - compute purpose (c2-std-4)
+            - memory optimized (m2-std-4) - gpu
+boot disk - image type (os & s/w) - public, custom, snapshot - linux, ubuntu, windows
+management, security, disk, n/w, sole tenancy, firewall
+        - automation - startup script
+
+static IP - external IP - create static IP - change & assign - release
+VM external IP - ephemeral - change on restart
+
+instance templates - define m/c type, image, labels, startup script (can't be changed- copy & update- no region & zone)
+managed instance groups (optional) - image family can be used
+
+custom image-  with OS patches & S/W pre-installed
+    - can be created from an instance, disk, snapshot, another image, file in cloud storage
+    - can be shared across projects
+    - can be deprecated
+    - hardening an image - customize image to your corporate policy
+to create VM from custom image - in boot disk select ur custom image
+pre-emptible vm (in availability policy) - spot instance- short live, cheaper, 30 sec warning, 
+
+live migration (or terminate or restart)- running instance will be migrated to same zone, to not down app while h/w or s/w upgrade- configured in availability policy
+
+instance - image- instance template - instance group (auto scaling) - inst1, inst2
+LB- instance group1 (inst1, inst2)
+  - instance group2 (inst3, inst4)

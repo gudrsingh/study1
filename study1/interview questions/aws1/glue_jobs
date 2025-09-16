@@ -1,0 +1,115 @@
+Sample 1: Cleaning Clinical Trial Data
+Use Case: R&D receives CSV files with patient trial results (age, weight, drug dosage, results). The files often have missing values and wrong data types. Scientists want a clean dataset in Parquet format for analytics in Athena.
+Solution
+Source: Raw data in S3 (s3://pharma-raw/clinical/)
+Transform: Drop nulls in critical fields, cast columns, standardize units
+Target: Parquet in s3://pharma-curated/clinical/ partitioned by trial_id
+Code
+import sys
+from awsglue.transforms import *
+from awsglue.utils import getResolvedOptions
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from awsglue.job import Job
+
+args = getResolvedOptions(sys.argv, ['JOB_NAME'])
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+job = Job(glueContext)
+job.init(args['JOB_NAME'], args)
+
+# Read raw data from S3
+datasource = glueContext.create_dynamic_frame.from_options(
+    "s3", {"paths": ["s3://pharma-raw/clinical/"]}, format="csv", format_options={"withHeader": True}
+)
+# Clean and cast
+df = datasource.toDF()
+df_clean = (
+    df.dropna(subset=["trial_id", "patient_id", "drug_dose"])
+      .withColumn("age", df["age"].cast("int"))
+      .withColumn("drug_dose", df["drug_dose"].cast("double"))
+)
+### More cleaning options sample, cast #############
+cleaned_df = (
+    df
+    # 1. Trim spaces from all string columns
+    .select([trim(col(c)).alias(c) for c in df.columns])
+    # 2. Standardize text: lower case for product names
+    .withColumn("product_name", lower(col("product_name")))
+    # 3. Replace common null-like values with real nulls
+    .replace(["N/A", "NA", "null", ""], None)
+    # 4. Remove special characters in numeric fields
+    .withColumn("dose_mg", regexp_replace(col("dose_mg"), "[^0-9.]", "").cast(DoubleType()))
+    # 5. Convert age to integer
+    .withColumn("age", regexp_replace(col("age"), "[^0-9]", "").cast(IntegerType()))
+    # 6. Drop rows missing critical fields
+    .dropna(subset=["patient_id", "product_name", "dose_mg"])
+    # 7. Drop duplicate rows
+    .dropDuplicates()
+)
+# Write to Parquet partitioned by trial_id
+df_clean.write.mode("overwrite").partitionBy("trial_id").parquet("s3://pharma-curated/clinical/")
+job.commit()
+#================================================================
+🔹 Sample 2: Joining RDS + S3 Data
+R&D wants to combine lab experiment metadata stored in RDS MySQL with large experiment result files in S3 to generate a consolidated dataset for reporting.
+Source 1: RDS MySQL (experiments table)
+Source 2: JSON files in S3 (experiment results)
+Transform: Join on experiment_id
+Target: Store merged dataset in Snowflake or S3
+Code
+# Read from RDS
+rds_df = glueContext.create_dynamic_frame.from_options(
+    connection_type="mysql",
+    connection_options={
+        "url": "jdbc:mysql://your-rds-endpoint:3306/pharma",
+        "user": "admin",
+        "password": "xxxx",
+        "dbtable": "experiments"
+    }
+)
+# Read from S3
+s3_df = glueContext.create_dynamic_frame.from_options(
+    "s3", {"paths": ["s3://pharma-raw/results/"]}, format="json"
+)
+# Join
+df_rds = rds_df.toDF()
+df_s3 = s3_df.toDF()
+joined = df_rds.join(df_s3, df_rds.experiment_id == df_s3.experiment_id, "inner")
+# Write back to S3
+joined.write.mode("overwrite").parquet("s3://pharma-curated/experiment_joined/")
+#========================================
+#🔹 Sample 3: Incremental Load for Data Lake
+Each day, new genomic files are uploaded. Instead of reprocessing the full dataset, Glue should only process new files (incremental load) and append them to a master dataset.
+Source: New daily genomic files (s3://genomics/raw/)
+Transform: Basic validation (drop rows with null gene_id)
+Target: Append to s3://genomics/master/
+Code
+# Read new files from S3 (using job bookmarks for incremental load)
+datasource = glueContext.create_dynamic_frame.from_catalog(
+    database="genomics_db",
+    table_name="raw_genomic_data",
+    transformation_ctx="datasource",
+    additional_options={"jobBookmarkKeys": ["file_name"], "jobBookmarkKeysSortOrder": "asc"}
+)
+df = datasource.toDF().dropna(subset=["gene_id"])
+# Append new data
+df.write.mode("append").parquet("s3://genomics/master/")
+#==========================create workflow===============
+aws glue create-workflow --name pharma-etl-pipeline
+#===== create trigger
+aws glue create-trigger \
+  --name "start-clean" \
+  --workflow-name "pharma-etl-pipeline" \
+  --type EVENT \
+  --actions JobName=job1_clean \
+  --predicate '{
+     "Logical": "ANY",
+     "Conditions": [
+       {
+         "CrawlState": "SUCCEEDED",
+         "CrawlerName": "clinical-raw-crawler"
+       }
+     ]
+  }'

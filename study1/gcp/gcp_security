@@ -1,0 +1,25 @@
+cloud identity provider - for AD authentication
+VPC flow log - used for n/w monitoring, forensics, real time security analysis, cost optimization
+Cloud NAT & PVT google access
+security - vpc service control, service perimeter, vpn, use secret manager
+users & identity aware proxy services to control access to app & implement zero tolerance/trust access mode
+cloud armor helps to protect DDoS, XSS & sqlinjection
+
+gcp cloud messaging - GCP notification services
+bucket secure - setup vpn service control & create a service perimeter
+connector - identity aware proxy connector
+* Google Cloud KMS, Google Cloud IAM, Google Cloud Identity (to enable multi factor authentication 
+and single sign-on authentication), Google Cloud Compliance
+** Google Cloud Security Scanner - can detect vulnerabilities in Google Kubernetes Engine (GKE), 
+   Google Compute Engine (GCE), and Google App Engine (GAE). Cloud Security Scanner lets you create,
+   schedule, run and manage scans via the GCP console. The scanner can detect many vulnerabilities,
+  such as Flash injection, cross-site scripting (XSS), and mixed content, as well as outdated or 
+  insecure JavaScript (JS) libraries.
+* cloud data loss prevention - sensitive data inspection, classification
+* Cloud IDS - Cloud-native, managed network threat detection with industry-leading security.
+* vpc service control - Protect sensitive data in Google Cloud services using security perimeters. 
+* shielded vm - Virtual machines hardened with security controls and defenses.
+* identity-aware proxy - Use identity and context to guard access to your applications and VMs.
+* beyondcorp enterprise - Scalable zero-trust platform with integrated threat and data protection.
+* cloud armor - Help protect your applications and websites against denial of service and web attacks.
+blue green dep - k patch svc blue-green svc-ip {spec:{selector:{app:green}}}

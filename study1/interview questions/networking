@@ -1,0 +1,99 @@
+1. DNS Resolution Issue
+👉 Scenario: Users are complaining they can access your web app using the server’s IP address, but not with the domain name.What steps would you take to troubleshoot?Which tools/commands would you use (e.g., nslookup, dig, traceroute)?
+
+Expected Answer:
+Check if DNS records (A/CNAME) exist and are propagated.
+Verify TTL values.
+Confirm internal DNS resolver vs public DNS.
+Use dig to see if DNS points to correct IP.
+Check if firewall or security group is blocking port 53.
+
+2. Slow Website (TCP/HTTP Analysis)
+👉 Scenario: A web application hosted on AWS/GCP is very slow for users in Europe, but fast in the US.
+How would you investigate and isolate whether this is a network latency or application issue?
+
+Expected Approach:
+Use traceroute or mtr to check network hops/latency.
+Compare CDN usage (CloudFront, Cloud CDN) vs direct requests.
+Look at HTTP response headers (TTFB, compression, caching).
+Check if load balancer is routing users to the nearest region.
+
+3. HTTP vs HTTPS Issue
+👉 Scenario: Your API works fine over HTTP, but fails with HTTPS. Clients get SSL/TLS handshake errors.
+What could be wrong and how would you fix it?
+
+Expected Points:
+Check if SSL certificate is valid and not expired.
+Verify certificate chain & intermediate certs.
+Confirm load balancer or reverse proxy has TLS configured correctly.
+Ensure correct TLS versions/cipher suites are enabled.
+
+4. UDP vs TCP Troubleshooting
+👉 Scenario: A real-time video streaming service works fine on LAN, but when accessed from WAN, users report packet loss and jitter. The service uses UDP. How would you troubleshoot and improve reliability?
+
+Expected Answer:
+Check MTU size / fragmentation issues.
+Verify firewall/NAT traversal for UDP ports.
+Consider enabling FEC (Forward Error Correction) or fallback to TCP.
+Use tools like Wireshark to monitor packet loss patterns.
+
+5. Port Connectivity Issue
+👉 Scenario: Your application needs to connect to a database on port 5432 (Postgres). From the app server, you can ping the DB host, but the connection is refused.How would you debug this?
+
+Expected Answer:
+Check if DB service is running and listening on the port (netstat, ss).
+Verify firewall/security group rules.
+Check DB config (listen_addresses in Postgres).
+Use telnet/nc to test port connectivity.
+
+6. API Timeout (REST/JSON)
+👉 Scenario: Your microservice calls another service via REST API. Sometimes requests fail after 30 seconds with timeout, even though the target service is healthy.What could cause this, and how do you troubleshoot?
+
+Expected Answer:
+Check network latency & packet drops.
+Verify client timeout settings vs server processing time.
+Look at connection pooling exhaustion.
+Inspect load balancer idle timeout configs.
+Capture traffic with tcpdump/Wireshark to analyze TCP retransmissions.
+
+7. DNS Caching Issue
+👉 Scenario: You changed your application’s IP yesterday, but some users still hit the old IP.
+Why does this happen, and how would you fix it?
+
+Expected Answer:
+DNS propagation delays due to high TTL.
+Local ISP caching DNS longer than expected.
+Flush DNS cache locally (ipconfig /flushdns, systemd-resolve --flush-caches).
+Lower TTL before migration in future.
+
+8. HTTP 502 Bad Gateway
+👉 Scenario: Your load balancer returns 502 Bad Gateway when routing requests to backend services.
+How do you troubleshoot this?
+
+Expected Answer:
+Check if backend services are up & healthy.
+Verify that LB target group health checks pass.
+Look at backend logs for errors (timeout, app crash).
+Confirm correct port mapping (LB listening on 443 but backend exposed on 8080).
+
+9. DNS vs CDN Issue
+👉 Scenario: Users are reporting your website sometimes resolves to the wrong CDN edge location.
+How do you debug DNS and CDN configuration?
+
+Expected Answer:
+Check geo-DNS and CDN routing rules.
+Compare DNS resolution from different regions (dig +trace).
+Ensure CDN is not serving stale cache.
+Validate DNS TTL vs CDN caching policies.
+
+10. SOAP vs REST Integration Issue
+👉 Scenario: Your team is integrating with a legacy partner API that uses SOAP. Your app is REST-based. Calls fail with 415 Unsupported Media Type.
+
+How would you debug and fix this?
+
+Expected Answer:
+
+Check if headers (Content-Type: text/xml) are being sent correctly.
+Ensure WSDL definition is imported properly.
+Use SOAPUI/Postman to test payloads.
+Implement translation/middleware layer if REST client cannot directly call SOAP.

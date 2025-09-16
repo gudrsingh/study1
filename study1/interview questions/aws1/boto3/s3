@@ -1,0 +1,71 @@
+#==============S3 bucket read/write Lambda=================
+import boto3
+import json
+import os
+s3 = boto3.client('s3')
+def lambda_handler(event, context):
+    bucket_name = os.environ['BUCKET_NAME']
+    key = event.get("key", "example.json")
+    action = event.get("action", "read")
+##########write
+        s3.put_object(
+            Bucket=bucket_name,
+            Key=key,
+            Body=json.dumps(data)
+        )
+    elif action == "read":
+        obj = s3.get_object(Bucket=bucket_name, Key=key)
+        content = obj['Body'].read().decode('utf-8')
+        return {"status": "success", "data": json.loads(content)}
+
+def lambda_handler(event, context):
+    print(event)
+    telnumber = event['Details']['ContactData']['CustomerEndpoint']['Address'];
+    key = unquote_plus(event['Records'][0]['s3']['object']['key'])
+    bucket = unquote_plus(event['Records'][0]['s3']['bucket']['name'])
+
+==========
+import json
+import zipfile
+import os
+import boto3
+from boto3 import client
+from urllib.parse import unquote_plus
+import io
+import re
+import gzip
+
+exclude_list = ["exe", "scr", "vbs", "js", "xml", "docm", "xps"]
+sns = boto3.client('sns' )
+
+def perform_unzip(zip_bytes, bucket, key, s3_client):
+    zip = zipfile.ZipFile(zip_bytes)
+    fil = zip.namelist()
+    prefix = '/'.join(key.split('/')[:-1]) + '/unzipped/'
+    for x in fil:
+        if x.lower().split('.')[-1] in exclude_list:
+            raise Exception('File contains extensions in exlcluded list')
+            env = bucket.split('-')[2].upper()
+            sns.publish(
+                    TopicArn = 'arn:aws:sns:us-east-1:${AWS::AccountId}:notify-nonstandard-filetypes',
+                    Subject = "{}: S3 upload warning: Non standard File encountered".format(EnvironmentName),
+                    Message = 'Non standard File encountered' + key) 
+        target_file = prefix + x
+        try:
+            s3_client.head_object(Bucket=bucket, Key=target_file)
+            print('File already exists: ', target_file)
+        except:
+            s3_client.put_object(Body=zip.read(x), Key=target_file, Bucket=bucket)
+            print('File added to the unzipped folder: ', target_file)
+
+def lambda_handler(event, context):
+    key = unquote_plus(event['Records'][0]['s3']['object']['key'])
+    bucket = unquote_plus(event['Records'][0]['s3']['bucket']['name'])
+#    if key.lower().endswith('.zip') or key.lower().endswith('.zip.001') or key.lower().endswith('.TXT.001.zip'):
+    if key.lower().endswith('.zip') or key.lower().endswith('.001'):
+        s3_client = boto3.client('s3')
+        obj = s3_client.get_object(Bucket=bucket, Key=key)
+        with io.BytesIO(obj["Body"].read()) as zip_bytes:
+            perform_unzip(zip_bytes, bucket, key, s3_client)
+    else:
+        print('Not a zipfile')

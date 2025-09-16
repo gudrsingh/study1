@@ -1,0 +1,74 @@
+provides E2E app management,,supports- GO, Java, .NET, Node, PHP, python, ruby using 
+pre-configured runtimes,,,use custom runtime and code in any lang,,connects to many GC 
+services like cloudsql,,pay for resources provisioned
+Features:
+    automatic load balancing & auto scaling,, managed platform updates & monitoring
+    App versioning, traffic splitting
+ce vs ae
+CE- IaaS, more flexibility more responsibility, choose image, install s/w, choose h/w, 
+finegrained access, permission, certs, firewalls, availability etc.
+AE- PaaS, serverless, less responsibility, lowr flexibility
+AE env-> 
+Standard - App run in lang specific sandboxes (e.g. Java sbx, python sbx)
+        complete isolation from OS/disk/other apps
+        V1- Java,Python,PHP,GO (older version),Restricted N/W access, 
+            only whitelisted extensions allowed, no restriction for Java & GO runtime
+        V2- Java, Python, PHP, Node, Ruby, GO (newer version), Full n/w access, 
+            No restriction on lang extensions
+Flexible: App instances run within docker containers
+            - Make use of CE VM,, supprt any runtime (builtin support for java,python,go, node.j)
+            access to background process and local disk
+
+app component hierarchy
+applications - service1 - version1 - instance1, instance2
+                        - version2 - instance3,instance4
+             - service2 - version1- inst1, inst2
+                        - version2 - inst3, inst4
+application- one app per project
+services or modules: Multiple microservices or app components,, multiple services in single app
+                    each service can have different settings
+versions- each version for specific code & config,, each version can run in 1 or more instances,
+            option to roll back & split traffic
+
+App engine comparision -->
+Feature             std                             flexible
+pricing             instance hours                  vCPU, memory, disk
+scaling             Manual, Basic, automatic        Manual, Automatic
+Scale to zero       Yes                             no, min 1 instance
+startup time        seconds                         minutes
+rapid scaling       yes                             no
+max request timout  1 to 10 min                     60 min 
+local disk          mostly except for python php    yes,ephemeral(no persistent),new disk restat 
+
+create-> select region-> lang selection -> env select-> add files/folder into project
+app.yaml -> config file for app engine, define required runtime
+main.py -> python code for python app
+requirements.txt - dependncy
+
+To deploy your app in app engine - go to project folder in shell 
+    gcloud config set project projectid
+    gcloud app deploy - should have bucket access
+
+To view your app- go to project folder in shell 
+    gcloud app browse
+App engine in console
+    deashboards - services, versions, instances, task queues, cron jobs, security               scans,            firewall rukes, quotas, memcache
+
+gcloud app services list - list services
+gcloud app versions list - list versions
+gcloud app instances list - list instances
+gcloud app deploy -version v2 - deploys version2
+gcloud app browse -version v1 - gives v1 app link
+
+traffic splitting
+gcloud app deploy --version=v3 --no-promote -> deploy but not switching traffic
+gcloud app services set-traffic splits=v3=.5,v2=.5 -> split 50% traffic to v2 and 50 to v3              (based on ip)
+--split-by=random -> split traffic randomly instead of by ip
+can also split based on cookie
+
+
+
+
+
+
+

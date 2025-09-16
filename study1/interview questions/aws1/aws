@@ -1,0 +1,2 @@
+EBS VS EFX VS FSX
+EBS provides high-performance, dedicated block-level storage for single EC2 instances, ideal for databases or operating systems. EFS is a shared, fully managed file storage service for Linux-based applications requiring file-level access across multiple instances using the NFS protocol. FSx offers specialized, high-performance file systems, including managed Windows file servers (SMB protocol) and high-throughput options for Linux (Lustre, ONTAP), catering to specific workloads like enterprise Windows applications or HPC. 

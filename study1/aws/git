@@ -1,0 +1,25 @@
+Visual Example
+
+Suppose you have this history:
+
+A---B---C (main)
+     \
+      D---E (feature)
+
+==>Merge:
+
+A---B---C------M (main)
+     \      /
+      D----E (feature)
+(M is a merge commit)
+
+==>Rebase (feature on main):
+A---B---C---D'---E' (feature rebased)
+(D’ and E’ are new commits)
+
+===>Cherry-pick (E onto main):
+A---B---C---E' (main)
+     \
+      D---E (feature)
+
+(only E was copied to main as a new commit E’)

@@ -1,0 +1,74 @@
+Architecture
+Kubernetes (K8s) has a master–worker architecture (also called control plane–data plane) that orchestrates containerized applications at scale. Let’s break it down:
+
+🔹 High-Level Kubernetes Architecture
+                +-----------------------+
+                |   Control Plane (API) |
+                +-----------------------+
+   +-------------+-----------+-----------+-------------+
+   |             |           |           |             |
++--v--+       +--v--+    +--v--+     +--v--+       +--v--+
+|API  |       |Scheduler| |Controller| |etcd |       |   |
+|Server      |          | |Manager   | |     |       |   |
++-------------+---------+-------------+------+       +---+
+          |
+          |  communicates with
+          v
+   +-----------------------------------------------+
+   |                 Worker Nodes                  |
+   |-----------------------------------------------|
+   | Kubelet | Kube Proxy |  Container Runtime     |
+   +---------+------------+------------------------+
+   | Pods (containers)                              |
+   +------------------------------------------------+
+
+🔹 1. Control Plane (Brain 🧠 of Kubernetes)
+These components manage the overall cluster state.
+API Server (kube-apiserver)-The entry point to Kubernetes.Exposes REST API (what kubectl talks to).
+Authenticates, validates, and persists config/state to etcd.
+
+etcd- A distributed key-value store. Stores the entire cluster state (Pods, Deployments, Secrets, ConfigMaps, etc.). Acts as the single source of truth.
+
+Scheduler (kube-scheduler) - Watches for new pods without assigned nodes.
+Decides which worker node to run them on (based on CPU, memory, taints/tolerations, affinity rules).
+
+Controller Manager (kube-controller-manager)- Runs multiple controllers that watch desired state vs. actual state.
+Examples:
+Node Controller → detects node failures.
+ReplicaSet Controller → ensures desired number of pod replicas.
+Endpoints Controller → maintains service endpoints.
+
+🔹 2. Worker Node (Muscles 💪 of Kubernetes)
+Each worker node runs workloads (pods) and has these components:
+Kubelet - Agent that runs on every node. Talks to API server → ensures containers are running as defined in pod specs. Reports node & pod status back to the control plane.
+
+Kube Proxy -  Maintains network rules. Enables communication between pods across nodes & external traffic → Services. Can use iptables or IPVS for routing.
+
+Container Runtime - Actually runs the containers (Docker, containerd, CRI-O, etc.).
+Kubernetes doesn’t run containers directly — it delegates to runtime via CRI (Container Runtime Interface).
+
+🔹 3. Kubernetes Objects (Abstractions 🏗️)
+Pod → Smallest deployable unit (wraps one or more containers).
+ReplicaSet → Ensures a specified number of identical pods.
+Deployment → Manages ReplicaSets, rolling updates, rollbacks.
+Service → Stable networking endpoint for a group of pods.
+ConfigMap / Secret → Externalize configuration & sensitive data.
+Ingress → HTTP/HTTPS routing to services.
+
+🔹 4. Flow of Events (How it works)
+User applies YAML (kubectl apply -f deployment.yaml).
+API server validates request, stores it in etcd.
+Scheduler assigns pods to nodes.
+Kubelet on node receives instructions, starts containers using container runtime.
+Kube Proxy handles networking so pods can talk across nodes.
+Controllers continuously monitor & ensure desired state = actual state.
+
+🔹 Key Points
+Control Plane = Brain (makes decisions, stores state).
+Worker Nodes = Muscles (actually run workloads).
+etcd = Memory (persistent state).
+Kubelet = Caretaker (ensures pods are alive).
+Controllers = Watchdogs (fix drift).
+
+to get Just IPs of pod(no headers, for scripting)
+kubectl get pods -o jsonpath='{.items[*].status.podIP}'

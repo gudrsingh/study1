@@ -1,0 +1,57 @@
+main.tf
+provider "google" {
+  project     = "${var.var_project}"
+}
+module "vpc" {
+  source = "../modules/global" 
+  env                   = "${var.var_env}"
+  company               = "${var.var_company}"
+  var_uc1_public_subnet = "${var.uc1_public_subnet}"
+  var_uc1_private_subnet= "${var.uc1_private_subnet}"
+  var_ue1_public_subnet = "${var.ue1_public_subnet}"
+  var_ue1_private_subnet= "${var.ue1_private_subnet}"
+}
+module "uc1" {
+  source                = "../modules/uc1"
+  network_self_link     = "${module.vpc.out_vpc_self_link}"
+  subnetwork1           = "${module.uc1.uc1_out_public_subnet_name}"
+  env                   = "${var.var_env}"
+  company               = "${var.var_company}"
+  var_uc1_public_subnet = "${var.uc1_public_subnet}"
+  var_uc1_private_subnet= "${var.uc1_private_subnet}"
+}
+module "ue1" {
+  source                = "../modules/ue1"
+  network_self_link     = "${module.vpc.out_vpc_self_link}"
+  subnetwork1           = "${module.ue1.ue1_out_public_subnet_name}"
+  env                   = "${var.var_env}"
+  company               = "${var.var_company}"
+  var_ue1_public_subnet = "${var.ue1_public_subnet}"
+  var_ue1_private_subnet= "${var.ue1_private_subnet}"
+}
+#########################################
+
+variable.tf
+variable "var_project" {
+        default = "project-name"
+    }
+variable "var_env" {
+        default = "dev"
+    }
+variable "var_company" { 
+        default = "company-name"
+    }
+variable "uc1_private_subnet" {
+        default = "10.26.1.0/24"
+    }
+variable "uc1_public_subnet" {
+        default = "10.26.2.0/24"
+    }
+variable "ue1_private_subnet" {
+        default = "10.26.3.0/24"
+    }
+variable "ue1_public_subnet" {
+        default = "10.26.4.0/24"
+    }
+
+=============

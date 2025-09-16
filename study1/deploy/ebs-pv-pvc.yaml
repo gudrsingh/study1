@@ -1,0 +1,32 @@
+[$$]>cat persistentvolume2.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-name
+spec:
+  accessModes:
+  - ReadWriteOnce
+  awsElasticBlockStore:
+    fsType: ext4
+    volumeID: aws://eu-west-2a/vol-123456-ID
+  capacity:
+    storage: 60Gi
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: gp2
+
+[$$]>cat persistentVolumeClaim2.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: new-namespace
+  labels:
+    app.kubernetes.io/name: <app-name>
+  name: pvc-name
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 60Gi
+  storageClassName: gp2
+  volumeName: pv-name

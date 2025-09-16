@@ -1,0 +1,35 @@
+VPC-> Router + firewall + VPN + I/P N/W
+BGP - broad g/w protocol
+Interconnect - data migration, DR, replication  -> dedicated connection parameter
+VLAN
+Firewall - distributed firewall
+    rule - 4 things
+    action -> allow or deny
+    protocol -> TCP, UDP, ICMP
+    source/detination for rule
+
+gcloud compute firewall-rules create http-allow-rule ___ directio = ingress __ 
+    allow = TCP 22 __ target-tags = ref-tags
+
+create FW - Name - , NW - vpc1, direction - Ingress/egress, Action - Allow/deny, Tags-
+    source i/p range - 10.0.0.1/32, protocol - tcp, port - 5001
+
+to handle ephemeral i/p issue use tags in f/w or L/B & L/B ICMP
+shared vpc - share select  subnets or all
+    host project - shared vpc   -> attach service project
+    service project 
+in service project VM - N/W - select shared n/w with M/C 
+e.g. e-comm project (HR Admin Accounts DB ) all can access each other's VM N/W using shared vpc
+& host project while having separate project mgmt, deployment, billing etc.
+
+VPC peering - i/p range should not overlap
+create peer vpc1 to vpc2  source/destination 1/2
+create peer vpc2 to vpc1  source/destination 2/1
+
+Traffic routing: static routing
+    vpc routing - routing table
+    every route consists of a destination and next hop 
+    route order
+dynamic routing
+
+

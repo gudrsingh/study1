@@ -1,0 +1,90 @@
+Ansible Terms
+Server: An entity that provides service for our Ansible
+Machine: A physical machine, a VM, or a container
+Target machine: An end machine to be configured by Ansible
+Task: An action
+Playbook: A location where YAML files are written and executed
+
+General syntax of an ad-hoc command:
+
+Command hostgroup module/options [arguments]
+Function	Command
+To check the connectivity of hosts	#ansible <group> -m ping
+To reboot hosts	#ansible <group> -a “/bin/reboot”
+To check the host system’s info	#ansible<group> -m setup | less
+To transfer files	#ansible <group> -m copy -a “src=home/ansible dest=/tmo/home”
+To create a new user	#ansible<group> -m user -a “name=ansible password= <encrypted password>”
+To delete a user	#ansible<group> -m user -a “name=ansible state- absent”
+To check if a package is installed and to update it	#ansible<group> -m yum -a “name=httpd state=latest”
+To check if a package is installed but not to update it	#ansible<group> -m yum -a “name=httpd state=present”
+To check if a package is of a specific version	#ansible<group> -m yum -a “name=httpd-1.8  state=latest”
+To check if a package is not installed	#ansible <group> -m yum -a “name= httpd state= absent
+To start a service	#ansible<group> -m service -a “name= httpd state=”started”
+To stop a service	#ansible<group> -m service -a “name= httpd state=”stopped”
+To restart a service	#ansible<group> -m service -a “name= httpd state=”restarted”
+
+Sample playbook/YAML file:
+
+---
+name: install and configure DB
+hosts: testServer
+become: yes
+vars:
+oracle_db_port_value: 1521
+tasks:
+-name: Install the Oracle DB
+yum: <code to install the DB>
+-name: Ensure the installed service is enabled and running
+service:
+name: <your service name>
+
+we are installing,, prometheus & grafana,
+setting file- we set url, &  path for metrics
+===========================================
+docker playbook
+==========================================
+- name: Install Docker on Linux
+  hosts: all
+  become: true   # Run with sudo
+  tasks:
+
+    - name: Ensure required packages are installed
+      apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      loop:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Install Docker CE
+      apt:
+        name: docker-ce
+        state: present
+        update_cache: yes
+
+    - name: Start and enable Docker service
+      service
+
+Explanation of the Playbook
+hosts: all → Runs on all inventory hosts.
+become: true → Uses sudo privileges.
+Install prerequisites (apt-transport-https, curl, etc.).
+Add Docker GPG key & repo → Ensures package authenticity.
+Install Docker CE (Community Edition).
+Start + Enable service → Docker starts now and on reboot.
+Add user to docker group → Lets users run docker without sudo.
+
+

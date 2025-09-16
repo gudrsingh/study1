@@ -1,0 +1,83 @@
+how does kubelet handle node pressure? what happens when disk fills?
+How kubelet handles node pressure
+Kubelet constantly monitors resource usage on the node:
+MemoryPressure – if the node runs low on memory.
+DiskPressure – if disk space or inodes are nearly full.
+PIDPressure – if the number of running processes is too high.
+
+When one of these conditions is detected, kubelet updates the NodeCondition (visible in kubectl describe node). It then works with the eviction manager to take corrective action.
+Eviction process under DiskPressure
+Threshold detection
+You can configure eviction thresholds (like --eviction-hard=memory.available<500Mi,nodefs.available<10%).
+If usage crosses that threshold, kubelet marks the node under DiskPressure = True.
+Pod eviction
+Kubelet evicts pods to reclaim resources.
+
+It prefers to evict BestEffort QoS pods first, then Burstable, and avoids Guaranteed unless it must.
+Within the same QoS class, it evicts pods with the lowest priority.
+Garbage collection - Before evicting pods, kubelet tries cleaning up unused images and dead containers.
+If disk is still full, only then does it start evicting pods.
+
+Pod lifecycle impact
+Evicted pods are terminated with a specific reason (Evicted: The node had disk pressure).
+The scheduler will reschedule them onto a healthier node if resources allow.
+If disk actually fills completely
+Kubelet itself may fail to write logs or checkpoint state.
+PodSandbox creation can fail (container runtime errors).
+API server heartbeats may stop, marking the node NotReady.
+Eventually, the node may be tainted by the control plane and workloads rescheduled elsewhere.
+================
+how to manage secrets across staging, qa & prod without exposure?
+using aws kms,
+Separation of environments, Least privilege, Short-lived credentials, Encrypt everywhere, No secrets in source-control, Audit & rotate, Use identity, not static keys 
+Option B — Dedicated secrets broker (HashiCorp Vault)
+
+Centralize secrets in Vault (multi-tenant patterns: namespaces or multiple clusters per environment).
+
+Use AWS Auth method (EC2 or IAM role) or Kubernetes Auth (service account tokens + OIDC) to issue dynamic credentials.
+
+Vault issues DB creds, AWS STS creds, or short-lived tokens on demand; enables automatic lease/renew/rotation.
+
+Use Vault Agent Injector or External Secrets Operator to surface secrets to pods.
+
+Why: fine-grained dynamic secrets, strong audit, secret leasing/rotation.
+=============
+1) What happens if the k8s master node and worker node firewall gets broken?
+
+Answer: Existing pods will continue running, but you can’t deploy new workloads or updates. API server can’t communicate with worker nodes, breaking cluster management capabilities.
+
+2) What happens if etcd backup is corrupted during a cluster restore?
+
+Answer: Complete cluster failure. The control plane won’t initialize and you can’t manage resources. Only options are using an older backup or rebuilding the cluster from scratch.
+
+3) What happens if a node’s kubelet crashes but the container runtime continues?
+
+Answer: Existing pods keep running, but the node is marked “NotReady.” After grace period (~5min), pods are evicted and rescheduled elsewhere. No new pods will be scheduled to this node.
+
+4) How would applications behave if Kubernetes DNS (CoreDNS) fails?
+
+Answer: Existing connections work but new service discovery fails. Applications show connection timeouts, and probes using DNS names fail, potentially causing cascading pod restarts.
+
+5) What happens during a network problem between control plane and worker nodes?
+
+Answer: Worker nodes continue running existing workloads, but controllers can’t manage them. New deployments, scaling, and updates fail. Nodes might eventually be marked unreachable.
+
+6) What happens if your CNI plugin starts dropping packets intermittently?
+
+Answer: Pod-to-pod communication becomes unreliable with sporadic timeouts. Services appear down randomly, causing difficult-to-troubleshoot application failures and inconsistent behavior.
+
+7) What happens to StatefulSets if underlying storage experiences high latency?
+
+Answer: Pod startup times increase dramatically. Database pods may trigger restart loops, write operations timeout, and new pods get stuck in “ContainerCreating” state.
+
+8) What happens if pod resource limits are set too low?
+
+Answer: Containers face OOM kills during peak loads. Applications become unstable with unexpected restarts, and horizontal scaling can’t solve the problem since each instance is resource-starved.
+
+9) What happens when control plane can’t reach cloud provider’s API?
+
+Answer: Cloud-specific features like LoadBalancers and persistent volumes fail. Node initialization is incomplete, and external resource provisioning stops working.
+
+10) What happens if your cluster’s certificate authority expires?
+
+Answer: Complete cluster failure. All component communications fail with TLS errors. API server rejects connections, kubectl stops working, and the entire cluster becomes unusable.

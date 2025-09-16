@@ -1,0 +1,81 @@
+new relic-
+Step 1: Sign Up and Create an Account
+Step 2: Create an Application in New Relic APM
+Step 3: Install New Relic Infrastructure Agent
+Step 4: Add Browser Monitoring
+Step 5: Explore New Relic Insights
+
+To install infrastructure in Linux, follow these instructions:
+Create the configuration file and add your 
+Determine the distribution version number:
+Enable New Relic's GPG key:
+Add the infrastructure agent repository:
+install the newrelic-infra package in root (default), privileged user, or unprivileged user mode.
+=========
+prometheus
+download and install prometheus s/w on server. (using curl or wget)
+Extract the Prometheus archive & Move the binaries to /usr/local/bin or (desired path)
+Now, we need to create directories for configuration files and other Prometheus data.
+    sudo mkdir /etc/prometheus /var/lib/prometheus  
+then, we move the configuration files to the directory we made previously:
+Configure Prometheus:
+  Note:- target-server is a node-exporter server. And Save it.
+We will use /etc/prometheus/prometheus.yml as our configuration file.
+============prometheus.yaml=============================================
+# my global config
+global:
+  scrape_interval: 15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: "prometheus"
+
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+
+    static_configs:
+      - targets: ["localhost:9090"]
+============prometheus.yaml=============================================
+Then, we will create a systemd unit file in /etc/systemd/system/prometheus.service with the following contents :
+[Unit] 
+Description=Prometheus
+After=network.target
+[Service] 
+User=prometheus 
+Group=prometheus 
+Type=simple 
+ExecStart=/usr/local/bin/prometheus \ 
+    --config.file /etc/prometheus/prometheus.yml \ 
+    --storage.tsdb.path /var/lib/prometheus/ \ 
+    --web.console.templates=/etc/prometheus/consoles \
+    --web.console.libraries=/etc/prometheus/console_libraries                                                                                                                                                                                                                                                                                      - -web.console.templates=/etc/prometheus/consoles \                                                               –web.console.libraries=/etc/prometheus/console_libraries
+ [Install]
+ WantedBy=multi-user.target
+ ====
+sudo systemctl daemon-reload
+sudo systemctl enable prometheus 
+sudo systemctl start prometheus
+sudo systemctl status prometheus
+===================================================
+download the package, extract and copy in desired path
+create a config file to define scrape interval, target, rule files etc.
+the create a prometheus service file using the above config file, define users, group, start command
+finally run systemctl command to enable and start prometheus
+==
+with the help of node exporter, it scrapes and extracts the node level metrics and put that into time series database, grafana reads from this prometheus as datasource and convert it into dashboards.

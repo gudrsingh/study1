@@ -1,0 +1,159 @@
+Command   description
+From image|scratch      base image for build
+Maintainer email        name of Maintainer
+Copy path dest          copy path from context into container loc
+Add src dest            same as copy but untar archives,accept urls
+RUN args                run a command with args
+USER NAME               set default username
+WORKDIR path            set default working directory
+CMD args                set default command
+ENV name value          set env variable
+======================================================================================
+Best Practices for Production Dockerfiles
+✅ Summary:
+Use slim/alpine/distroless base images.
+Multi-stage builds to keep runtime small.
+Never run as root.
+Pin versions, use .dockerignore.
+Optimize caching & reduce layers.
+Add healthchecks & secure scanning.
+Would you like me to take a real-world app example (say, a Python Flask API) and show you a production-ready Dockerfile with these best practices applied?
+================================
+1. Use Official & Minimal Base Images
+Prefer official images (python:3.12-slim, node:20-alpine, golang:1.22-alpine, etc.).
+Use slim/alpine unless you need full OS tools.
+Smaller images → fewer vulnerabilities → faster pulls.
+FROM python:3.12-slim
+
+2. Use Multi-stage Builds
+Compile/build in one stage, run in another (so you don’t ship compilers & dev tools to prod).
+✅ Keeps final image small & secure.
+3. Don’t Run as Root
+By default, containers run as root → risky in prod.
+RUN adduser --disabled-password --gecos '' appuser
+USER appuser
+4. Pin Versions, do not use latest tag
+Avoid latest tags (unstable).
+Pin dependencies (base image, packages, etc.) for reproducibility.
+FROM node:20.11.1-alpine
+5. Leverage .dockerignore
+Prevent copying unnecessary files (e.g., .git, logs, tests).
+.dockerignore example:
+.git
+node_modules
+*.log
+tests/
+✅ Smaller build context, faster builds.
+6. Use Layer Caching Efficiently
+Put least frequently changing commands first.
+Example: COPY package*.json || ./ RUN npm ci --only=production ||COPY . .
+✅ If source code changes, npm install layer is cached.
+7. Keep Images Small
+Remove build tools & caches:
+RUN apk add --no-cache build-base \
+ && pip install --no-cache-dir -r requirements.txt \
+ && apk del build-base
+
+8. Use Healthchecks
+Add healthchecks so orchestrators (Docker, Kubernetes) know if container is healthy.
+HEALTHCHECK CMD curl -f http://localhost:8080/health || exit 1
+
+9. Set ENTRYPOINT & CMD Properly
+ENTRYPOINT = executable; CMD = default args.
+ENTRYPOINT ["python"]
+CMD ["app.py"]
+✅ Allows overriding arguments if needed.
+10. Security Best Practices
+Scan images with tools like Trivy.
+Use distroless images (Google’s gcr.io/distroless/base) when possible.
+Sign & verify images.
+============================================================================================
+=============================================================================================
+============================================================================================
+How to optimize Docker layers & reduce image size?
+✅ Summary:
+Pick minimal base images (alpine, slim, distroless).
+Reduce layers by combining commands.
+Use .dockerignore.
+Cache dependencies smartly.
+Use multi-stage builds.
+Clean up package caches.
+Analyze image size regularly.
+
+🔹 1. Use Slim / Alpine / Distroless Base Images
+Start with minimal base images instead of ubuntu or debian.
+FROM python:3.12-slim    # instead of python:3.12
+
+🔹 2. Minimize Layers
+Each RUN, COPY, ADD creates a new layer. Combine related commands into one RUN.
+# ❌ Bad (3 layers)
+RUN apt-get update
+RUN apt-get install -y curl
+RUN rm -rf /var/lib/apt/lists/*
+# ✅ Good (1 layer)
+RUN apt-get update && apt-get install -y curl \
+ && rm -rf /var/lib/apt/lists/*
+
+ 🔹 3. Use .dockerignore
+Don’t copy unnecessary files (like .git, node_modules, tests/).
+Example .dockerignore: .git,  node_modules, *.log, tests/
+✅ Smaller build context = smaller image.
+
+🔹 4. Order Instructions for Layer Caching
+Put rarely-changing layers first (dependencies), and frequently-changing ones last (source code).
+# Install deps first (cached unless package.json changes)
+COPY package*.json ./
+RUN npm ci --only=production  
+# Copy app code (changes often → last layer)
+COPY . .
+✅ Rebuilds only code changes, not dependencies.
+
+🔹 5. Use Multi-Stage Builds
+Build in one image, copy only the artifact into a smaller runtime image.
+# Stage 1: Builder
+FROM golang:1.22 AS builder
+WORKDIR /app
+COPY . .
+RUN go build -o app
+# Stage 2: Runtime
+FROM alpine:3.20
+WORKDIR /app
+COPY --from=builder /app/app .
+CMD ["./app"]
+✅ Removes compilers/dev tools → tiny final image.
+
+🔹 6. Remove Unnecessary Packages
+Install only what you need, and clean caches.
+RUN apk add --no-cache curl
+# or Debian-based:
+RUN apt-get update && apt-get install -y curl \
+ && rm -rf /var/lib/apt/lists/*
+
+🔹 7. Use --no-cache or Equivalent
+Avoid caching package manager metadata.
+RUN pip install --no-cache-dir -r requirements.txt
+RUN npm ci --only=production --ignore-scripts
+
+🔹 8. Avoid Large ADD/COPY
+Don’t copy the whole project if you only need some files.
+Example:
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY src/ /app/src/
+
+🔹 9. Use Multi-Stage for Static Assets
+For Node/React, build static files in one stage, then serve with nginx in the final stage.
+
+🔹 10. Analyze Image Size
+Use tools like:
+docker history <image> → see layer sizes.
+dive <image> → deep analysis.
+trivy <image> → security + bloat scanning.
+===============================================================================================
+===============================================================================================
+===============================================================================================
+Key Differences between RUN, CMD & ENTRYPOINT(Quick Table)
+Instruction	Runs at	    Purpose	                                Override behavior
+RUN	        Build time	Build the image (install, setup, etc.)	N/A
+CMD	        Runtime	    Default command for container	        Yes (docker run <cmd>)
+ENTRYPOINT	Runtime	    Fixed command/executable for container	No (unless --entrypoint is used)

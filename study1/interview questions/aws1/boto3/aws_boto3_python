@@ -1,0 +1,82 @@
+=====================EC2 start/stop Lambda=================
+import boto3
+import os
+ec2 = boto3.client('ec2')
+def lambda_handler(event, context):
+    instance_id = event['instance_id']
+    action = event.get("action", "start")
+    if action == "start":
+        ec2.start_instances(InstanceIds=[instance_id])
+        return {"status": "success", "message": f"EC2 {instance_id} starting"}
+    elif action == "stop":
+        ec2.stop_instances(InstanceIds=[instance_id])
+        return {"status": "success", "message": f"EC2 {instance_id} stopping"}
+    else:
+        return {"status": "error", "message": "Invalid action"}
+==============S3 bucket read/write Lambda=================
+import boto3
+import json
+import os
+s3 = boto3.client('s3')
+def lambda_handler(event, context):
+    bucket_name = os.environ['BUCKET_NAME']
+    key = event.get("key", "example.json")
+    action = event.get("action", "read")
+##########write
+        s3.put_object(
+            Bucket=bucket_name,
+            Key=key,
+            Body=json.dumps(data)
+        )
+    elif action == "read":
+        obj = s3.get_object(Bucket=bucket_name, Key=key)
+        content = obj['Body'].read().decode('utf-8')
+        return {"status": "success", "data": json.loads(content)}
+======================RDS crud, secret manager=====================
+import boto3, import pymysql, import json, import os
+secrets_client = boto3.client('secretsmanager')
+# Get secret name from environment variable
+secret_name = os.environ['DB_SECRET_NAME']
+region_name = os.environ.get('AWS_REGION', 'us-east-1')
+def get_db_credentials():
+    """Fetch DB credentials from AWS Secrets Manager"""
+    response = secrets_client.get_secret_value(SecretId=secret_name)
+    secret = json.loads(response['SecretString'])
+    return secret  # returns dict with {host, username, password, dbname}
+def lambda_handler(event, context):
+    creds = get_db_credentials()
+    connection = pymysql.connect(
+        host=creds['host'],
+        user=creds['username'],
+        passwd=creds['password'],
+        db=creds['dbname'],
+        connect_timeout=5
+    )
+    action = event.get("action", "read")
+    cursor = connection.cursor()
+    try:
+        if action == "create":
+            query = "INSERT INTO users (name, email) VALUES (%s, %s)"
+            cursor.execute(query, (event['name'], event['email']))
+            connection.commit()
+            return {"status": "success", "message": "Record inserted"}
+        elif action == "read":
+            query = "SELECT * FROM users WHERE id=%s"
+            cursor.execute(query, (event['id'],))
+            row = cursor.fetchone()
+            return {"status": "success", "data": row}
+        elif action == "update":
+            query = "UPDATE users SET email=%s WHERE id=%s"
+            cursor.execute(query, (event['email'], event['id']))
+            connection.commit()
+            return {"status": "success", "message": "Record updated"}
+        elif action == "delete":
+            query = "DELETE FROM users WHERE id=%s"
+            cursor.execute(query, (event['id'],))
+            connection.commit()
+            return {"status": "success", "message": "Record deleted"}
+        else:
+            return {"status": "error", "message": "Invalid action"}
+    finally:
+        cursor.close()
+        connection.close()

@@ -1,0 +1,76 @@
+import boto3
+import json
+import time
+
+# Initialize AWS clients
+s3_client = boto3.client('s3')
+glue_client = boto3.client('glue')
+cloudwatch_client = boto3.client('logs')
+bedrock_client = boto3.client('bedrock-runtime')  # Amazon Bedrock client
+
+# Generic function to invoke Bedrock models
+def invoke_bedrock_model(model_id, input_text):
+    payload = {"inputText": input_text, "parameters": {}}
+    response = bedrock_client.invoke_model(
+        modelId=model_id,
+        contentType="application/json",
+        accept="application/json",
+        body=json.dumps(payload)
+    )
+    response_body = json.loads(response['body'].read())
+    return response_body.get("generatedText", "No output generated")
+
+# Function to invoke Claude for Schema Inference
+def infer_schema(data_sample):
+    return invoke_bedrock_model("anthropic.claude-v2", f"Infer schema for this data: {data_sample}")
+
+# Function to invoke Titan for Data Quality Checks
+def perform_data_quality_checks(data_sample):
+    return invoke_bedrock_model("amazon.titan-text-express-v1", f"Analyze data quality: {data_sample}")
+
+# Function to invoke Mistral for Data Transformation
+def transform_data(data_sample):
+    return invoke_bedrock_model("mistral.mistral-7b", f"Transform this data into a standardized format: {data_sample}")
+
+# AI Agent Function for Error Handling
+def handle_errors(error_message):
+    cloudwatch_client.put_log_events(
+        logGroupName='/aws/lambda/autonomous_data_agent',
+        logStreamName='errors',
+        logEvents=[
+            {
+                'timestamp': int(time.time() * 1000),
+                'message': error_message
+            }
+        ]
+    )
+
+# Main AI Agent Execution Function
+def lambda_handler(event, context):
+    try:
+        bucket = event['Records'][0]['s3']['bucket']['name']
+        key = event['Records'][0]['s3']['object']['key']
+        
+        response = s3_client.get_object(Bucket=bucket, Key=key)
+        data_sample = response['Body'].read().decode('utf-8')[:500]  # Sample first 500 characters
+        
+        schema = infer_schema(data_sample)
+        print("Inferred Schema:", schema)
+        
+        # Perform data quality checks
+        data_quality_issues = perform_data_quality_checks(data_sample)
+        print("Data Quality Issues:", data_quality_issues)
+        
+        # Perform data transformation
+        transformed_data = transform_data(data_sample)
+        print("Transformed Data:", transformed_data)
+        
+    except Exception as e:
+        handle_errors(str(e))
+        print("Error encountered:", str(e))
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps('AI Agent Execution Completed')
+    }
+

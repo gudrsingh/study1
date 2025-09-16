@@ -1,0 +1,103 @@
+| **Command**         | **Description**                         | **Example**                                                                         |
+| ------------------- | --------------------------------------- | ----------------------------------------------------------------------------------- |
+| **SELECT**          | Retrieve data from table(s)             | `SELECT name, age FROM employees;`                                                  |
+| **WHERE**           | Filter rows by condition                | `SELECT * FROM employees WHERE age > 30;`                                           |
+| **ORDER BY**        | Sort result set                         | `SELECT * FROM employees ORDER BY salary DESC;`                                     |
+| **GROUP BY**        | Group rows for aggregation              | `SELECT dept, COUNT(*) FROM employees GROUP BY dept;`                               |
+| **HAVING**          | Filter groups after aggregation         | `SELECT dept, AVG(salary) FROM employees GROUP BY dept HAVING AVG(salary) > 60000;` |
+| **DISTINCT**        | Remove duplicate rows                   | `SELECT DISTINCT department FROM employees;`                                        |
+| **LIMIT / TOP**     | Restrict number of rows                 | `SELECT * FROM employees LIMIT 5;`                                                  |
+| **INSERT INTO**     | Insert new rows                         | `INSERT INTO employees (name, age) VALUES ('Alice', 30);`                           |
+| **UPDATE**          | Modify existing rows                    | `UPDATE employees SET salary=60000 WHERE id=1;`                                     |
+| **DELETE**          | Delete rows                             | `DELETE FROM employees WHERE id=1;`                                                 |
+| **MERGE / UPSERT**  | Insert or update depending on match     | *(varies by DB)*                                                                    |
+| **CREATE TABLE**    | Create new table                        | `CREATE TABLE employees (id INT, name VARCHAR(50));`                                |
+| **ALTER TABLE**     | Modify table structure                  | `ALTER TABLE employees ADD COLUMN dept VARCHAR(50);`                                |
+| **DROP TABLE**      | Delete entire table                     | `DROP TABLE employees;`                                                             |
+| **TRUNCATE TABLE**  | Remove all rows (fast)                  | `TRUNCATE TABLE employees;`                                                         |
+| **CREATE INDEX**    | Speed up lookups                        | `CREATE INDEX idx_salary ON employees(salary);`                                     |
+| **DROP INDEX**      | Remove an index                         | `DROP INDEX idx_salary;`                                                            |
+| **INNER JOIN**      | Return matching rows                    | `SELECT e.name, d.dept FROM employees e INNER JOIN dept d ON e.dept_id=d.id;`       |
+| **LEFT JOIN**       | All rows left + matches from right      | `SELECT e.name, d.dept FROM employees e LEFT JOIN dept d ON e.dept_id=d.id;`        |
+| **RIGHT JOIN**      | All rows right + matches from left      | `SELECT e.name, d.dept FROM employees e RIGHT JOIN dept d ON e.dept_id=d.id;`       |
+| **FULL OUTER JOIN** | All rows from both tables               | `SELECT e.name, d.dept FROM employees e FULL OUTER JOIN dept d ON e.dept_id=d.id;`  |
+| **UNION**           | Combine query results (no duplicates)   | `SELECT name FROM employees UNION SELECT name FROM contractors;`                    |
+| **UNION ALL**       | Combine query results (with duplicates) | `SELECT name FROM employees UNION ALL SELECT name FROM contractors;`                |
+| **EXCEPT / MINUS**  | Rows in first query, not second         | `SELECT name FROM employees EXCEPT SELECT name FROM contractors;`                   |
+| **INTERSECT**       | Rows common to both queries             | `SELECT name FROM employees INTERSECT SELECT name FROM contractors;`                |
+===
+#Data Retrieval (DQL – Data Query Language)
+#SELECT – Retrieve data from one or more tables.
+SELECT name, age FROM employees;
+#WHERE – Filter rows based on conditions.
+SELECT * FROM employees WHERE age > 30;
+#ORDER BY – Sort result set.
+SELECT * FROM employees ORDER BY salary DESC;
+#GROUP BY – Group rows for aggregation.
+SELECT department, COUNT(*) FROM employees GROUP BY department;
+#HAVING – Filter groups after aggregation.
+SELECT department, AVG(salary) FROM employees GROUP BY department HAVING AVG(salary) > 60000;
+#DISTINCT – Remove duplicates.
+SELECT DISTINCT department FROM employees;
+#LIMIT / TOP – Restrict rows returned.
+SELECT * FROM employees LIMIT 5; -- MySQL/Postgres
+SELECT TOP 5 * FROM employees; -- SQL Server
+#🔹 Data Modification (DML – Data Manipulation Language)
+#INSERT INTO – Add new rows.
+INSERT INTO employees (name, age, salary) VALUES ('Alice', 30, 50000);
+#UPDATE – Modify existing rows.
+UPDATE employees SET salary = 60000 WHERE id = 1;
+#DELETE – Remove rows.
+DELETE FROM employees WHERE id = 1;
+#MERGE / UPSERT – Insert or update depending on row existence.
+MERGE INTO employees AS target
+USING new_data AS source
+ON target.id = source.id
+WHEN MATCHED THEN UPDATE SET salary = source.salary
+WHEN NOT MATCHED THEN INSERT (id, name, salary) VALUES (source.id, source.name, source.salary);
+#🔹 Data Definition (DDL – Data Definition Language)
+#CREATE TABLE – Create new table.
+CREATE TABLE employees (id INT PRIMARY KEY, name VARCHAR(50), salary DECIMAL(10,2));
+#ALTER TABLE – Modify structure of table.
+ALTER TABLE employees ADD COLUMN department VARCHAR(50);
+#DROP TABLE – Delete table.
+DROP TABLE employees;
+#TRUNCATE TABLE – Remove all rows quickly (reset table).
+TRUNCATE TABLE employees;
+#CREATE INDEX – Speed up queries.
+CREATE INDEX idx_salary ON employees(salary);
+#DROP INDEX – Remove index.
+DROP INDEX idx_salary;
+#🔹 Joins & Relationships
+#INNER JOIN – Match rows in both tables.
+SELECT e.name, d.department_name
+FROM employees e
+INNER JOIN departments d ON e.dept_id = d.id;
+#LEFT JOIN – All rows from left, matching from right.
+SELECT e.name, d.department_name
+FROM employees e
+LEFT JOIN departments d ON e.dept_id = d.id;
+#RIGHT JOIN – All rows from right, matching from left.
+SELECT e.name, d.department_name
+FROM employees e
+RIGHT JOIN departments d ON e.dept_id = d.id;
+#FULL OUTER JOIN – All rows from both sides.
+SELECT e.name, d.department_name
+FROM employees e
+FULL OUTER JOIN departments d ON e.dept_id = d.id;
+#UNION – Combine results from multiple queries (removes duplicates).
+SELECT name FROM employees
+UNION
+SELECT name FROM contractors;
+#UNION ALL – Combine results, keep duplicates.
+SELECT name FROM employees
+UNION ALL
+SELECT name FROM contractors;
+#EXCEPT / MINUS – Return rows in first query but not in second.
+SELECT name FROM employees
+EXCEPT
+SELECT name FROM contractors;
+#INTERSECT – Rows common to both queries.
+SELECT name FROM employees
+INTERSECT
+SELECT name FROM contractors;

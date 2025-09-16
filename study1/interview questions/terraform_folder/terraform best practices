@@ -1,0 +1,107 @@
+🚦 1. prevent_destroy: Your Last Line of Defense Against Accidental Nukes
+What went wrong: Someone ran terraform apply without noticing the plan was about to nuke your RDS instance. Five seconds later, your prod database was gone.
+
+✅ Add this:
+lifecycle {
+  prevent_destroy = true
+}
+💡 Use it on: aws_db_instance,aws_s3_bucket,Any resource that would ruin your day if deleted
+It’s not bulletproof — but it’ll make you stop and think before Terraform turns into a wrecking ball.
+
+📜 2. Tag Everything. No Excuses.
+Why: Unlabeled infra is like unlabelled food in the fridge — no one knows who made it, what it does, or why it’s still there.
+
+✅ Let Terraform handle it:
+
+provider "aws" {
+  region = "ap-south-1"
+  default_tags {
+    tags = {
+      Owner      = "devops"
+      Environment = "prod"
+    }
+  }
+}
+Later, when finance asks why S3 costs spiked — your tags will save your butt.
+
+🧱 3. Stop Copy-Pasting. Start Modularizing.
+True story: I once saw four main.tf files in the same repo, all doing the same thing — all subtly broken in different ways.
+
+✅ Refactor into modules:
+
+Keep each module self-contained with main.tf, variables.tf, and outputs.tf
+Then reuse them:
+module "vpc" {
+  source = "./modules/vpc"
+  cidr_block = "10.0.0.0/16"
+}
+Think of it like legos. One fix, and everything improves.
+
+🧠 4. Use depends_on When Terraform Pretends Everything’s Fine
+What’s the catch: You deploy a Lambda + EventBridge. The rule gets created first, but the Lambda’s not ready — and nothing triggers.
+
+✅ Force the order:
+
+resource "aws_lambda_permission" "allow_eventbridge" {
+  ...
+  depends_on = [aws_lambda_function.my_lambda]
+}
+Sometimes Terraform’s too optimistic. This brings it back to reality.
+
+🔄 5. Move to Remote State. Seriously.
+Disaster incoming: Two teammates run Terraform locally. One makes a change. The other unknowingly undoes it. Congratulations — now you’re debugging for hours.
+
+✅ Centralize it:
+
+backend "s3" {
+  bucket         = "tfstate-prod"
+  key            = "app/infrastructure.tfstate"
+  region         = "us-east-1"
+  dynamodb_table = "tfstate-lock"
+}
+It’s not just best practice. It’s peace of mind.
+
+🧪 6. Make terraform plan Mandatory in Every PR
+Why: Infra changes should never be a surprise — especially not in prod.
+
+✅ Automate it in CI:
+
+terraform init
+terraform plan -out=tfplan
+Even better? Have it post the plan summary in the PR. Your future self (and your reviewers) will thank you.
+
+🔐 7. Parameterize Everything: Region, Profile, Environment
+Facepalm moment: Hardcoded region = us-east-1. Now you want to spin it up in staging? Tough luck.
+
+✅ Fix it with:
+
+variable "aws_region" {
+  default = "us-east-1"
+}
+Then:
+
+provider "aws" {
+  region = var.aws_region
+}
+Write once, use everywhere. Just like good code.
+
+📉 8. Add Cost Awareness with Infracost
+The trap: A tiny EC2 instance sneaks into your PR. You approve it. One month later — surprise bill.
+
+✅ Use Infracost:
+
+Shows projected cost on every PR
+Forces devs to think before spinning up resources
+Saves your budget from silent bloat
+Cloud isn’t expensive — until no one’s watching.
+
+👁️ 9. Output What You’ll Need Later
+We’ve all done this: Deploy goes fine. But now someone wants the API Gateway URL. You end up digging through state files or the AWS Console.
+
+✅ Save yourself time:
+
+output "lambda_url" {
+  value = aws_lambda_function_url.my_lambda.function_url
+}
+Good outputs are like good logging — future-you will silently thank past-you.
+

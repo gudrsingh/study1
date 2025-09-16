@@ -1,0 +1,30 @@
+serverless, managed svc, HA & Scalable, cost effective DWH, real time analytics
+std sql, ideal for datalake & dwh, storage & compute separate, flexible pricing, public datasets
+
+price- $10000/month for reserving 500 slots, $30 perslot per month
+loading extracting free, 
+
+BQ dataset - BQ table (e.g HR dataset - emp table;; admin dataset - userid table)
+create dataset - create table;; add data, add public data
+
+Select split(tags,'1'), count(*) TAG, count from 'bq-public-data, stackoverflow.posts_quetions'
+ where EXTRACT (YEAR from creation_date >= 2010 group by tags)
+
+why BQ, traditional DW limitations
+  scalability issues, upgrades are dificult, high maint cost, support effort, high cost
+tarditional DW - complex etl, user erstrict, legacy BI, cont path updates, DBA need
+BQ - automated data delivery, insights accessible, for AI/ML, gcp managed, simlify dta opn
+
+kafka-streaming ingest or bulk upload (batch job) -> replicated distributed storage -> 
+BQ (distributed memory shuffle tier, petabyyte n/w), high available cluster compute
+sql compliant, REST API, webUI, CLI, client lib & lang 
+
+BQ remote memory shuffle - fasterperformance for complex queries, join and aggregate more data
+better scalability
+best practice data format (avro)
+speed -avro compressed,avro uncoompressed,parquet,csv compr,json comp,csv uncomp, json uncomp
+follow ELT instead of ETL 
+buffer (cloud pub/sub) - streaming data - load cloud dataflow - raw BQ- staging BQ - report BQ
+
+
+

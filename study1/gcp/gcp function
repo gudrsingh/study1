@@ -1,0 +1,32 @@
+Name : Give a name to your function. For e.g. function-1 or any other name that you chose.
+Memory : Go with the default 256MB for now since we are just in testing mode.
+Trigger: We are going to go with the HTTP Trigger since we want to invoke it directly via a HTTPs endpoint. Go ahead and select HTTP Trigger. Note the unique URL that it generated.
+Runtime: This will currently have all the runtimes that are either in General Availability (GA) or Beta. You should see Node.js 6, Node.js 8 and Python 3.7.
+Source Code : We can paste our source code here. A default template is provided to you and for now, we will go with that. Study the index.js template that is provided. Notice the function that we are exporting via the exports.helloWorld statement.
+In the field for function to execute, it will need to match the exports statement, hence this value will be helloWorld.
+
+gcloud functions deploy nodejs-http-function \
+--gen2 \
+--runtime=nodejs20 \
+--region=REGION \
+--source=. \
+--entry-point=helloGET \
+--trigger-http
+
+gcloud functions delete nodejs-http-function --gen2 --region REGION 
+
+HTTP triggers, which react to HTTP(S) requests, and correspond to HTTP functions.
+Event triggers, which react to events within your Google Cloud project, and correspond to event-driven functions.
+
+Triggers supported in Cloud Functions (1st gen)
+Cloud Functions (1st gen) supports the following types of triggers:
+
+HTTP triggers
+Event triggers:
+Pub/Sub triggers
+Cloud Storage triggers
+Firestore triggers
+Google Analytics for Firebase triggers
+Firebase Realtime Database triggers
+Firebase Authentication triggers
+Firebase Remote Config triggers

@@ -1,0 +1,112 @@
+include:
+  - project: 'secdevops-public/ci-template'
+    ref: 'main'
+    file: 'ci.yml'
+
+variables:
+    IMAGE_TAG: "latest"
+
+# default:
+#   tags:
+#     - secdevops-runner
+stages:
+  - build
+  - test
+  - package
+  - DAST
+  - defect-dojo
+
+build:
+  stage: build
+  image: eu-harbor.merckgroup.com/secdevops-platform/maven:3.9.6-eclipse-temurin-17 # source https://hub.docker.com/_/maven
+  cache:
+    paths:
+      - .m2/repository/
+      - target/
+  artifacts:
+    paths:
+      - target/webgoat-*.jar
+  script:
+    - mvn package
+
+integration-tests:
+  stage: test
+  image: eu-harbor.merckgroup.com/secdevops-platform/maven:3.9.6-eclipse-temurin-17 # source https://hub.docker.com/_/maven
+  cache:
+    paths:
+      - .m2/repository/
+      - target/
+  script:
+    - mvn $MAVEN_CLI_OPTS test
+
+kiuwan-sast:
+  extends: .kiuwan-sast
+  stage: test
+  variables:
+    KIUWAN_USER: "akeyless://Teams/WebGoat/KiuwanUser"
+    KIUWAN_PASSWD: "akeyless://Teams/WebGoat/KiuwanPassword"
+    KIUWAN_APPLICATION: "PoC_SecDevOps"
+
+filter-kiuwan-export:
+  extends: .filter-kiuwan-export
+  variables:
+    INPUT_FILE: "./reports/analysis_vulnerabilities_report.csv"
+    OUTPUT_FILE: "./reports/analysis_vulnerabilities_report_filtered.csv"
+    FILTER_COLUMN_NUMBER: 5
+    FILTER_EXPECTED_COLUMN_CONTENT: "Security"
+
+Filter-critical-vulnerabilities:
+  extends: .Filter-critical-vulnerabilities
+  stage: test
+
+
+build-and-push-image:
+  extends: .docker-build
+  stage: package
+  dependencies: [build]
+  cache:
+    paths:
+      - .m2/repository/
+      - target/
+  variables:
+    CI_DOCKERFILE: "${CI_PROJECT_DIR}/Dockerfile"
+
+owasp-zap-dast:
+  extends: .owasp-zap-dast
+  # image: ghcr.io/zaproxy/zaproxy:stable
+  stage: DAST
+  services:
+    - name: $CI_REGISTRY_IMAGE:$IMAGE_TAG
+      alias: webgoat
+  variables:
+    ZAP_PLAN: "${CI_PROJECT_DIR}/zap-baseline-scan.yml"
+  before_script:
+    - echo "Checking target readyness"
+    - mkdir -p ${CI_PROJECT_DIR}/report
+    - sleep 30
+    - curl http://webgoat:8081/WebGoat/login
+    - echo "Setup test user"
+    - curl -X POST -d 'username=guest01&password=test01&matchingPassword=test01&agree=agree' http://webgoat:8081/WebGoat/register.mvc
+   
+defectdojo-upload:
+  extends: .defectdojo
+  stage: defect-dojo
+  variables:
+    DEFECTDOJO_TOKEN: "akeyless://Teams/WebGoat/DefectDojoToken"
+    DEFECTDOJO_PRODUCTID: 22
+    DEFECTDOJO_ENGAGEMENTID: 394
+  script:
+    - export DEFECTDOJO_SCAN_Title="Kiuwan Scan Vulnerabilities"
+    - export DEFECTDOJO_SCAN_TYPE="Kiuwan Scan"
+    - export DEFECTDOJO_SERVICE="WebGoat (Kiuwan Vulnerabilities)"
+    - export DEFECTDOJO_SCAN_TAGS="SAST"
+    - export DEFECTDOJO_SCAN_FILE="./reports/analysis_vulnerabilities_report_filtered.csv"
+    - !reference [.defectdojo-upload, script]
+    - export DEFECTDOJO_SCAN_Title="OWASP ZAP Baseline Scan"
+    - export DEFECTDOJO_SCAN_TYPE="ZAP Scan"
+    - export DEFECTDOJO_SERVICE="WebGoat (OWASP ZAP)"
+    - export DEFECTDOJO_SCAN_TAGS="DAST"
+    - export DEFECTDOJO_SCAN_FILE="./report/scan-report.xml"
+    - !reference [.defectdojo-upload, script]
+  allow_failure: true
+

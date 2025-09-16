@@ -1,0 +1,15 @@
+1. Multi-Cloud Architecture
+
+“Here we deploy workloads across AWS, Azure, and GCP. Global DNS acts as the entry point and routes traffic based on health or latency. This avoids vendor lock-in and provides high availability, but it comes with added cost and operational complexity since each cloud has its own services, APIs, and security controls. Terraform and centralized monitoring help keep it consistent.”
+
+2. Hybrid Cloud Architecture
+
+“This pattern bridges on-premises systems with the cloud. Legacy or compliance-heavy workloads remain in the datacenter, while modern apps or AI/ML workloads run in the public cloud. Connectivity is secured via Direct Connect or ExpressRoute. It balances innovation with compliance, but requires strong networking and governance to handle latency and data movement.”
+
+3. Landing Zone
+
+“A landing zone is essentially the blueprint for cloud at scale. It separates environments into organizational units like dev, prod, and shared services, all governed by central security, IAM, and guardrails. Logs and audits flow into a central account. This gives a consistent, secure foundation that supports enterprise growth while ensuring compliance is automated, not an afterthought.”
+
+4. Hub-and-Spoke Network
+
+“The hub is a central VPC where shared services like DNS, monitoring, and firewalls sit. Each application environment runs in isolated spoke VPCs, which connect through the hub. This provides centralized control and visibility, reduces complexity, and enforces consistent security policies. The trade-off is the hub becoming a critical dependency, so it must be highly available.”

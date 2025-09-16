@@ -1,0 +1,13 @@
+“Thank you for the opportunity. I’m Rohit Kumar, a DevOps & Cloud Architect with over 18 years of experience in IT, specializing in DevOps transformations, cloud adoption, and SecDevOps.
+
+I started my career as a software engineer, working on C, C++, and Java, and gradually moved into automation and cloud engineering. Over the last decade, I’ve had the opportunity to lead large-scale migrations from on-premises to AWS and GCP, architect enterprise Kubernetes platforms across AWS EKS, Azure AKS, and GCP GKE, and design GitOps-driven CI/CD pipelines using ArgoCD, FluxCD, and Helm.
+
+In my current role at Merck, I lead cloud engineering and DevOps initiatives. Some of my key contributions include:
+Embedding SecDevOps practices across the SDLC, integrating tools like SonarQube, ZAP, and Kiuwan to improve compliance and code quality.
+Designing multi-architecture container solutions (ARM64 + x86) for microservices, which improved cost efficiency and performance.
+Enhancing observability using Prometheus, Grafana, Loki, and ELK, enabling proactive monitoring and faster incident response.
+Driving automation that improved release velocity by 70% and reduced operational costs by 40%.
+
+Beyond delivery, I’m passionate about mentoring teams, running DevOps workshops, and fostering a DevOps culture that aligns with business objectives. I’ve also been exploring Generative AI in DevOps — for example, contributing to hackathon projects and experimenting with AI-powered code assistants to optimize pipelines.
+
+Overall, I bring a mix of hands-on technical depth in cloud, DevOps, and security, along with leadership experience in scaling teams and transforming ways of working. I’m excited about opportunities where I can apply this experience to build secure, scalable, and innovative cloud-native solutions.”

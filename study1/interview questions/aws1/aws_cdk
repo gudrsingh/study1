@@ -1,0 +1,92 @@
+🔹 AWS CDK Core Concepts
+App → The entry point (like main program).
+Stack → Logical unit of deployment (maps to CloudFormation stack).
+Construct → Building blocks (resources like S3, EC2, Lambda).
+L1, L2, L3 Constructs,L1 → Direct CloudFormation (raw, verbose).L2 → Higher-level, opinionated constructs (simpler, best practices).
+L3 → Patterns (pre-built combinations of resources).
+================================================================================================
+🔹 Example: CDK in Python
+1. Install CDK CLI
+npm install -g aws-cdk
+cdk --version
+2. Create a project
+mkdir cdk-demo && cd cdk-demo
+********************cdk init app --language python
+********************This creates:
+********************app.py → entry point
+********************cdk_demo/cdk_demo_stack.py → stack file
+********************Bootstrap & Deploy
+********************cdk bootstrap   # sets up resources for CDK in your AWS account
+********************cdk synth       # shows the generated CloudFormation
+********************cdk deploy      # deploys to AWS
+********************cdk diff → shows what will change if you redeploy.
+********************cdk destroy → deletes stack.
+3. Create a Virtual Environment
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+4. Example: Deploy an S3 Bucket
+Edit cdk_demo/cdk_demo_stack.py:
+from aws_cdk import (
+    Stack,
+    aws_s3 as s3
+)
+from constructs import Construct
+class CdkDemoStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+        # Create an S3 bucket
+        bucket = s3.Bucket(
+            self, 
+            "MyFirstBucket",
+            versioned=True,
+            encryption=s3.BucketEncryption.S3_MANAGED,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL
+        )
+
+5. Bootstrap & Deploy
+cdk bootstrap   # sets up resources for CDK in your AWS account
+cdk synth       # shows the generated CloudFormation
+cdk deploy      # deploys to AWS
+
+✅ You now have a versioned, encrypted, private S3 bucket created via CDK.
+🔹 Example: Lambda + API Gateway
+from aws_cdk import (
+    Stack,
+    aws_lambda as _lambda,
+    aws_apigateway as apigateway,
+)
+from constructs import Construct
+class LambdaApiStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs):
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Lambda function
+        hello_fn = _lambda.Function(
+            self, "HelloFunction",
+            runtime=_lambda.Runtime.PYTHON_3_9,
+            handler="hello.handler",
+            code=_lambda.Code.from_inline(
+                "def handler(event, context):\n"
+                "    return {'statusCode': 200, 'body': 'Hello from Lambda'}"
+            ),
+        )
+
+        # API Gateway
+        api = apigateway.LambdaRestApi(
+            self, "HelloApi",
+            handler=hello_fn,
+            proxy=True
+        )
+
+Deploy with:
+cdk deploy
+👉 This creates an API endpoint → / → which calls the Lambda.
+
+🔹 Typical CDK Workflow
+Write CDK code (Python/TS/Java).
+cdk synth → generates CloudFormation template.
+cdk deploy → deploys resources.
+cdk diff → shows what will change if you redeploy.
+cdk destroy → deletes stack.
+==============================================================
