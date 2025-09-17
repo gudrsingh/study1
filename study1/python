@@ -31,3 +31,54 @@ dictionary- spam = {color:red,age:42}
 keys()- for k in spam.keys();; values- for v in spam.values()
 file handling- reading file1- file1=open("finel1",'r');; for line in file1
 file.read[n];; file.write('hello');;; file.readline
+#================================================================
+dictionary:
+# Creating a dictionary
+person = {
+    "name": "Alice",
+    "age": 30,
+    "city": "New York"
+}
+
+# Accessing values
+print(person["name"])  # Output: Alice
+
+# Using the get method (provides default if key not found)
+print(person.get("email", "Not available"))  # Output: Not available
+
+# Adding or updating key-value pairs
+person["email"] = "alice@mail.com"
+person["age"] = 31
+
+# Looping through keys and values
+for key, value in person.items():
+    print(key, value)
+# Output:
+# name Alice
+# age 31
+# city New York
+# email alice@mail.com
+#========================================================
+Tuples
+# Creating a tuple
+coordinates = (10.0, 20.5)
+
+# Tuples can also hold mixed types
+mixed = ("Alice", 30, True)
+
+# Accessing tuple elements
+print(coordinates[0])  # Output: 10.0
+
+# Iterating over a tuple
+for element in mixed:
+    print(element)
+# Output:
+# Alice
+# 30
+# True
+
+# Unpacking a tuple
+name, age, is_active = mixed
+print(name)      # Output: Alice
+print(age)       # Output: 30
+print(is_active) # Output: True
