@@ -1,0 +1,198 @@
+Migration Strategy
+Q: You need to migrate 500 VMs to AWS in 6 months. How would you approach this?
+A:
+Discovery & Assessment: Use Migration Evaluator, Migration Hub.
+Plan: Classify workloads (Rehost, Replatform, Refactor).
+Build: Setup Landing Zone, network, security.
+Migrate: Use Application Migration Service (MGN) for lift-and-shift, DMS for databases.
+Optimize: Rightsizing, automation, tagging for cost control.
+
+Tools:
+AWS Application Migration Service (MGN): Automates lift-and-shift server migrations for physical, virtual, or cloud-based machines to Amazon EC2, offering minimal downtime and integrated testing.
+
+AWS Database Migration Service (DMS): Simplifies migration and replication of databases to AWS, with support for homogeneous and heterogeneous migrations, including continuous data replication.
+
+AWS Migration Hub: Serves as a centralized dashboard to track and manage migrations across different AWS and partner tools.
+
+AWS Application Discovery Service: Performs analysis of on-premises environments to inventory servers, map dependencies, and plan migration strategies.
+
+AWS Server Migration Service (SMS): Agentless service for automating and tracking replications of live server volumes to AWS.
+
+AWS DataSync: Enables fast, automated data transfer from on-premises storage to AWS services like S3, EFS, and FSx.
+
+Popular Third-Party Tools
+CloudEndure (now AWS Application Migration Service): Previously provided comprehensive lift-and-shift migrations with continuous replication and minimal downtime.
+
+Carbonite Migrate: Supports migration of physical, virtual, and cloud servers to AWS with encryption and repeated cutover testing.
+
+Cloudsfer: Facilitates migration for content management systems, retaining permissions and offering cloud backup as well.
+
+CloudFuze: Useful for moving files and cloud users across services to AWS S3, with robust permission and file management support.
+
+Corent SurPaaS MaaS: Focuses on app migration, offering feasibility analysis and integration between apps and PaaS services.
+
+Selection Suggestions
+Match the tool with your migration type (servers, databases, VMs, files, applications).
+
+Use AWS Discovery and Migration Hub for planning, tracking, and centralized visibility.
+
+Consider third-party integrations if you need extra connectors or cloud-to-cloud migrations.
+
+
+=================================
+DB Migration
+Migrating a production Oracle database to AWS with minimal downtime is best achieved using a combination of physical and logical methods—specifically, Oracle’s RMAN Transportable Tablespaces in conjunction with AWS Database Migration Service (DMS), or Oracle’s Zero Downtime Migration (ZDM) solution and Oracle GoldenGate.
+
+Use AWS DMS with CDC (Change Data Capture).
+Initial load → Continuous replication → Cutover at low-traffic window.
+Validate with checksum.
+Choose RDS for Oracle or Aurora PostgreSQL if refactoring.
+
+=======
+Recommended Strategies
+1. RMAN Transportable Tablespaces (XTTS) + AWS DMS
+Perform a physical migration using RMAN XTTS to move all historical data in tablespaces, minimizing initial downtime.
+
+Immediately after the export, return the tablespaces to read/write mode so the source database remains in production.
+
+Use AWS DMS with its change data capture (CDC) feature to replicate ongoing changes to the target AWS database.
+
+Finalize cutover with a brief downtime for applications to switch to the new AWS instance.
+
+2. AWS DMS with Data Pump
+Dump the source database using Oracle Data Pump for the initial load.
+
+Set up AWS DMS CDC to continuously apply changes from the source until the final cutover, reducing downtime to minutes.
+
+3. Oracle Zero Downtime Migration (ZDM)
+Use Oracle ZDM, which integrates Data Guard or GoldenGate for high availability and minimal impact.
+
+ZDM follows Oracle’s Maximum Availability Architectures and can automate physical and logical workflows for direct migration to Amazon RDS for Oracle or Oracle on EC2.
+
+Supports both single-instance and RAC databases and is suited for various Oracle versions and platforms.
+
+Steps for XTTS + AWS DMS Approach
+Set up source and target Oracle databases (on-prem and AWS).
+
+Take RMAN full and incremental backups, restore on target.
+
+Make tablespace read-only, take final incremental backup.
+
+Import metadata objects using Data Pump.
+
+Set up AWS DMS to replicate changes starting from the last consistent point (SCN).
+
+Perform application cutover during a short outage.
+
+Steps for Oracle ZDM Approach
+Install ZDM service host and configure networking between source and target.
+
+Export data using Data Pump.
+
+Transfer dump files, import into target.
+
+Use Data Guard or GoldenGate for change synchronization.
+
+Validate, finalize, and perform the switch with near-zero application downtime.
+
+Key Tools
+Tool	Use Case	Downtime	AWS Support
+AWS DMS (CDC)	Database replication & migration	Minimal	Yes
+RMAN XTTS	Physical migration of tablespaces	Minimal	Yes
+Oracle ZDM	Automated, integrated migration	Negligible	Yes
+Oracle GoldenGate/DataGuard	Real-time change replication	Near-zero	Yes
+By combining physical migration (for the bulk data) with logical CDC replication (for ongoing changes), or using Oracle ZDM with GoldenGate/DataGuard, production Oracle workloads can be moved to AWS with near-zero downtime and robust data integrity.
+
+====================================================
+Cost_savings:
+Analyze with Cost Explorer + Trusted Advisor.
+EC2: RI/Savings Plans, rightsizing, Spot for batch jobs.
+Storage: S3 lifecycle → IA/Glacier.
+Networking: NAT Gateway optimization (use VPC endpoints).
+Enable tagging for cost allocation.
+
+Security Posture
+Q: Client is worried about misconfigured IAM policies. How do you assess and improve security?
+A:
+Run IAM Access Analyzer.
+Use AWS Config + Security Hub for compliance checks (CIS benchmarks).
+Enforce least privilege IAM roles, avoid wildcards (*).
+Centralize IAM with SSO/Identity Center.
+
+Well-Architected Review
+Q: Customer wants validation that their workloads follow AWS best practices. How do you proceed?
+A:
+Conduct AWS Well-Architected Review across 6 pillars (Ops, Security, Reliability, Performance, Cost, Sustainability).
+Identify risks, provide remediation plan.
+Example: Unencrypted S3 → Enable KMS encryption.
+
+Container Orchestration
+Q: Should I use ECS, EKS, or Fargate for my containerized workloads?
+A:
+ECS: Simple, AWS-native, integrates well.
+EKS: Standard Kubernetes, portability, ecosystem.
+Fargate: Serverless containers, no infra management, good for small/mid workloads.
+Decision depends on scale, portability, and ops maturity.
+
+12. Monitoring & Logging
+Q: How would you centralize monitoring and logging for 100+ AWS accounts?
+A:
+Centralize CloudWatch logs & metrics in Security account.
+Use CloudTrail → S3 → Athena for audit.
+Optionally integrate with SIEM (Splunk/ELK).
+
+13. Serverless App Design
+Q: Client wants a scalable event-driven app with minimal ops. What AWS services would you use?
+A:
+API Gateway + Lambda + DynamoDB.
+Workflow orchestration with Step Functions.
+Events via EventBridge.
+Monitoring via CloudWatch/X-Ray.
+
+16. Large Data Transfer
+Q: How do you move 500 TB of data to AWS in 3 weeks?
+A:
+If bandwidth limited → Use AWS Snowball Edge.
+If high bandwidth (1–10 Gbps DX) → Online migration with S3 Transfer Acceleration.Validate with checksum after load.
+
+19. Data Sovereignty
+
+Q: Client requires data to never leave India. How do you design?
+A:
+Use ap-south-1 (Mumbai) region.
+Block replication outside India.
+Use SCPs to restrict usage to India region.
+Encrypt with KMS CMK hosted in India.
+
+20. API Security
+Q: Customer exposes APIs to external clients. How do you secure them?
+A:
+Use API Gateway with WAF.
+Auth via Cognito / OAuth2.
+Rate limiting & throttling in API Gateway.
+Logging & monitoring via CloudWatch.
+
+21. Cost-Effective Dev/Test
+Q: How would you optimize AWS costs for dev/test environments?
+A:
+Use Auto Stop for EC2 non-business hours.
+Spot instances for non-critical workloads.
+S3 IA/Glacier for test data.
+Enforce budgets with AWS Budgets/Alerts.
+
+22. Data Lake Ingestion
+Q: How do you build a secure data lake in AWS?
+A:
+Ingest data → Kinesis Firehose / Glue ETL.
+Store in S3 with encryption + versioning.
+Catalog with Glue Data Catalog + Lake Formation.
+Query via Athena/Redshift Spectrum.
+
+24. Multi-Region Active-Active
+Q: Customer wants an app available globally with <1s latency. Design it.
+A:
+Route 53 latency-based routing.
+Aurora Global Database for DB replication.
+CloudFront for static content.
+Multi-region ECS/EKS with auto scaling.
+
